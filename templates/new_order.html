@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — New Order</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 700px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 32px; }
+        .form-section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        input, select, textarea { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 12px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 14px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #ff2d78; }
+        .flavour-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; }
+        .flavour-row:last-child { border-bottom: none; }
+        .flavour-name { font-size: 15px; font-weight: 700; }
+        .qty-input { width: 80px; text-align: center; }
+        .warning-box { background: #ff6b0015; border: 1px solid #ff6b00; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+        .warning-title { color: #ff6b00; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+        .warning-item { font-size: 14px; color: #ff6b00; padding: 4px 0; }
+        .btn { padding: 14px 32px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; width: 100%; text-align: center; margin-top: 8px; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <p class="page-title">New Order</p>
+
+    {% if warnings %}
+    <div class="warning-box">
+        <p class="warning-title">⚠️ Stock Warning</p>
+        {% for w in warnings %}
+        <p class="warning-item">{{ w['flavour'].replace('_slapp','').replace('_',' ').title() }}: need {{ w['needed'] }}, only {{ w['available'] }} available</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if packaging_warning %}
+    <div class="warning-box" style="border-color: #ff6b00;">
+        <p class="warning-title" style="color: #ff6b00;">📦 Packaging Warning</p>
+        <p class="warning-item" style="color: #ff6b00;">{{ packaging_warning }}</p>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/orders/new">
+        
+        <div class="form-section">
+            <p class="section-title">Customer Details</p>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" placeholder="Customer name" required>
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="text" name="phone" placeholder="Phone number" required>
+            </div>
+            <div class="form-group">
+                <label>Delivery Address</label>
+                <textarea name="address" placeholder="Full delivery address" rows="2" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Delivery Date</label>
+                <input type="date" name="delivery_date" required>
+            </div>
+            <div class="form-group">
+                <label>Notes (optional)</label>
+                <input type="text" name="notes" placeholder="Any special instructions">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <p class="section-title">Cookie Order</p>
+            {% for recipe in recipes %}
+            {% if recipe[3] %}
+            <div class="flavour-row">
+                <span class="flavour-name">{{ recipe[1].replace('_slapp','').replace('_',' ').title() }}</span>
+                <input type="number" name="qty_{{ recipe[1] }}" class="qty-input" min="0" value="0" placeholder="0" >
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="form-section">
+            <p class="section-title">Combo (Optional)</p>
+            <div class="form-group">
+                <label>Apply Combo</label>
+                <select name="combo_id">
+                    <option value="">No combo</option>
+                    {% for combo in combos %}
+                    {% if combo[5] %}
+                    <option value="{{ combo[0] }}">{{ combo[1] }} (Buy {{ combo[2] }} Get {{ combo[3] }} Free)</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-pink">Place Order</button>
+        <a href="/orders" class="btn btn-outline">Cancel</a>
+
+    </form>
+</div>
+
+</body>
+</html>

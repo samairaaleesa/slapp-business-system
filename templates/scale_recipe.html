@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Scale Recipe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 700px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 32px; }
+        .form-section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .form-row { display: flex; gap: 16px; align-items: flex-end; }
+        .form-group { flex: 1; }
+        label { display: block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        select, input { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 12px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 14px; }
+        select:focus, input:focus { outline: none; border-color: #ff2d78; }
+        .btn { padding: 12px 24px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .result-section { background: #111; border-radius: 8px; padding: 24px; }
+        .result-title { font-size: 20px; font-weight: 900; color: #ff2d78; margin-bottom: 4px; }
+        .result-sub { font-size: 12px; color: #888; margin-bottom: 24px; letter-spacing: 2px; }
+        .ingredient-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #222; }
+        .ingredient-row:last-child { border-bottom: none; }
+        .ingredient-name { font-size: 15px; font-weight: 700; }
+        .ingredient-amount { font-size: 20px; font-weight: 900; color: #ffe600; }
+        .ingredient-unit { font-size: 12px; color: #888; margin-left: 4px; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+<div class="container">
+    <p class="page-title">Scale Recipe</p>
+
+    <div class="form-section">
+        <p class="section-title">How many cookies are you making?</p>
+        <form method="POST" action="/recipes/scale">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Flavour</label>
+                    <select name="flavour" required>
+                        {% for recipe in recipes %}
+                        {% if recipe[3] %}
+                        <option value="{{ recipe[1] }}" {% if selected_flavour == recipe[1] %}selected{% endif %}>
+                            {{ recipe[1].replace('_slapp','').replace('_',' ').title() }}
+                        </option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Number of Cookies</label>
+                    <input type="number" name="portions" min="1" placeholder="e.g. 24" 
+                           value="{{ portions or '' }}" required>
+                </div>
+                <button type="submit" class="btn btn-pink" style="white-space:nowrap;">Scale →</button>
+            </div>
+        </form>
+    </div>
+
+    {% if scaled %}
+    <div class="result-section">
+        <p class="result-title">{{ selected_flavour.replace('_slapp','').replace('_',' ').title() }}</p>
+        <p class="result-sub">{{ portions }} cookies</p>
+        {% for item in scaled %}
+        <div class="ingredient-row">
+            <span class="ingredient-name">{{ item['name'] }}</span>
+            <div>
+                <span class="ingredient-amount">{{ item['amount'] }}</span>
+                <span class="ingredient-unit">{{ item['unit'] }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+</body>
+</html>

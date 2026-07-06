@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Settings</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 900px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 32px; }
+        .section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; }
+        .row:last-child { border-bottom: none; }
+        .row-name { font-size: 15px; font-weight: 700; }
+        .row-value { font-size: 14px; color: #ffe600; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .btn-green { background: #39ff14; color: #0a0a0a; }
+        .btn-red { background: #ff2d2d; color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .combo-badge { background: #ff2d7820; border: 1px solid #ff2d78; color: #ff2d78; padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+        .combo-badge.inactive { background: #33333320; border-color: #333; color: #555; }
+        .actions { display: flex; gap: 8px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <p class="page-title">Settings</p>
+
+    <!-- Pricing -->
+    <div class="section">
+        <p class="section-title">Cookie Pricing</p>
+        {% for flavour, price in pricing %}
+        <div class="row">
+            <span class="row-name">{{ flavour.replace('_slapp','').replace('_',' ').title() }}</span>
+            <div class="actions">
+                <span class="row-value">₹{{ price }}</span>
+                <a href="/settings/pricing/{{ flavour }}/edit" class="btn btn-yellow">Edit</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Combos -->
+    <div class="section">
+        <p class="section-title">Combos</p>
+        {% for combo in combos %}
+        <div class="row">
+            <div>
+                <span class="row-name">{{ combo[1] }}</span>
+                <span class="combo-badge {% if not combo[5] %}inactive{% endif %}" style="margin-left:8px;">
+                    Buy {{ combo[2] }} Get {{ combo[3] }} Free
+                </span>
+            </div>
+            <div class="actions">
+                {% if combo[5] %}
+               <a href="/settings/combos/{{ combo[0] }}/deactivate" class="btn btn-outline">Deactivate</a>
+               {% else %}
+               <a href="/settings/combos/{{ combo[0] }}/activate" class="btn btn-green">Activate</a>
+               {% endif %}
+               <a href="/settings/combos/{{ combo[0] }}/delete" class="btn btn-red" 
+                    onclick="return confirm('Delete this combo permanently?')">Delete</a>
+        </div>
+        </div>
+        {% endfor %}
+        <div style="margin-top:16px;">
+            <a href="/settings/combos/new" class="btn btn-pink">+ Add Combo</a>
+        </div>
+    </div>
+
+    <!-- Cookie Stock Thresholds -->
+    <div class="section">
+        <p class="section-title">Cookie Stock Thresholds</p>
+        {% for flavour, threshold in cookie_thresholds %}
+        <div class="row">
+            <span class="row-name">{{ flavour.replace('_slapp','').replace('_',' ').title() }}</span>
+            <div class="actions">
+                <span class="row-value">{{ threshold }} portions</span>
+                <a href="/settings/threshold/cookie/{{ flavour }}/edit" class="btn btn-yellow">Edit</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Ingredient Thresholds -->
+    <div class="section">
+        <p class="section-title">Ingredient Thresholds</p>
+        {% for name, threshold, unit in ingredient_thresholds %}
+        <div class="row">
+            <span class="row-name">{{ name.replace('_',' ').title() }}</span>
+            <div class="actions">
+                <a href="/settings/ingredient/{{ name }}/price" class="btn btn-outline">Price</a>
+                <a href="/settings/threshold/ingredient/{{ name }}/edit" class="btn btn-yellow">Edit</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Packaging -->
+    <div class="section">
+        <p class="section-title">Packaging</p>
+        {% for box_name, capacity, cost, stock, threshold in packaging %}
+        <div class="row">
+            <div>
+                <p class="row-name">{{ box_name.replace('_',' ').title() }}</p>
+                <p style="font-size:12px; color:#888;">Holds {{ capacity }} · ₹{{ cost }} per box · threshold: {{ threshold }}</p>
+            </div>
+            <a href="/settings/packaging/{{ box_name }}/edit" class="btn btn-yellow">Edit</a>
+        </div>
+        {% endfor %}
+        <div style="margin-top:16px;">
+            <a href="/settings/packaging/new" class="btn btn-pink">+ Add Box Type</a>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

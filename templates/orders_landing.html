@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Orders</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 600px; margin: 0 auto; padding: 80px 32px; text-align: center; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 60px; }
+        .buttons { display: flex; flex-direction: column; gap: 16px; }
+        .big-btn { padding: 32px; border: none; border-radius: 8px; font-family: 'Arial Black', Arial, sans-serif; font-size: 18px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: block; transition: opacity 0.2s; }
+        .big-btn:hover { opacity: 0.85; }
+        .big-btn-pink { background: #ff2d78; color: #fff; }
+        .big-btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .btn-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 6px; font-weight: 400; letter-spacing: 1px; text-transform: none; display: block; }
+        .big-btn-yellow .btn-sub { color: rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <p class="page-title">Orders</p>
+    <div class="buttons">
+        <a href="/orders/new" class="big-btn big-btn-pink">
+            + New Order
+            <span class="btn-sub">Log an order from Instagram DM</span>
+        </a>
+        <a href="/orders/all" class="big-btn big-btn-yellow">
+            View All Orders
+            <span class="btn-sub">Pending, delivered and cancelled</span>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

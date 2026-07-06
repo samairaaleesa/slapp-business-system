@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Bake Brief</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 900px; margin: 0 auto; padding: 32px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; }
+        .date-filter { display: flex; gap: 12px; align-items: center; }
+        .date-input { background: #111; border: 1px solid #333; color: #f0f0f0; padding: 10px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .summary-section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 24px; border-left: 4px solid #ffe600; }
+        .summary-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ffe600; margin-bottom: 20px; }
+        .flavour-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #222; }
+        .flavour-row:last-child { border-bottom: none; }
+        .flavour-name { font-size: 18px; font-weight: 900; }
+        .flavour-count { font-size: 36px; font-weight: 900; color: #ffe600; }
+        .orders-section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 16px; border-left: 4px solid #ff2d78; }
+        .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .order-number { font-size: 11px; color: #555; letter-spacing: 2px; }
+        .order-name { font-size: 18px; font-weight: 900; margin-top: 2px; }
+        .order-phone { font-size: 13px; color: #888; }
+        .order-address { font-size: 13px; color: #888; margin-bottom: 12px; }
+        .order-items { display: flex; gap: 10px; flex-wrap: wrap; }
+        .item-tag { background: #222; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 700; }
+        .no-orders { text-align: center; padding: 60px; color: #555; }
+        .total-bar { background: #ffe60015; border: 1px solid #ffe600; border-radius: 8px; padding: 16px 24px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .total-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ffe600; }
+        .total-value { font-size: 32px; font-weight: 900; color: #ffe600; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <p class="page-title">Bake Brief</p>
+        <form method="GET" action="/bake" class="date-filter">
+            <input type="date" name="date" value="{{ selected_date }}" class="date-input">
+            <button type="submit" class="btn btn-yellow">View</button>
+        </form>
+    </div>
+
+    {% if bake_brief %}
+        <!-- Total summary -->
+        <div class="total-bar">
+            <span class="total-label">Total cookies to bake</span>
+            <span class="total-value">{{ bake_brief|sum(attribute=1) }}</span>
+        </div>
+
+        <!-- By flavour -->
+        <div class="summary-section">
+            <p class="summary-title">By Flavour</p>
+            {% for flavour, total in bake_brief %}
+            <div class="flavour-row">
+                <span class="flavour-name">{{ flavour.replace('_slapp','').replace('_',' ').title() }}</span>
+                <span class="flavour-count">{{ total }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Order breakdown -->
+        <p style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#888; margin-bottom:16px;">Order Breakdown</p>
+        {% for order_id, details in orders.items() %}
+        {% if details['status'] == 'pending' %}
+        <div class="orders-section">
+            <div class="order-header">
+                <div>
+                    <p class="order-number">ORDER #{{ order_id }}</p>
+                    <p class="order-name">{{ details['customer'] }}</p>
+                    <p class="order-phone">{{ details['phone'] }}</p>
+                </div>
+            </div>
+            <p class="order-address">📍 {{ details['address'] }}</p>
+            <div class="order-items">
+                {% for flavour, quantity in details['items'] %}
+                <span class="item-tag">{{ quantity }}x {{ flavour.replace('_slapp','').replace('_',' ').title() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+
+    {% else %}
+        <div class="no-orders">
+            <p>No orders for {{ selected_date }}. Free day! 🍪</p>
+        </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

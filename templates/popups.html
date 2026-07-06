@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Popups</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 800px; margin: 0 auto; padding: 32px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .popup-card { display: block; background: #111; border-radius: 8px; padding: 20px 24px; margin-bottom: 12px; border-left: 4px solid #ff2d78; text-decoration: none; color: #f0f0f0; display: flex; justify-content: space-between; align-items: center; transition: border-color 0.2s; }
+        .popup-card:hover { border-left-color: #ffe600; }
+        .popup-name { font-size: 18px; font-weight: 900; }
+        .popup-date { font-size: 12px; color: #888; margin-top: 4px; }
+        .popup-arrow { font-size: 20px; color: #555; }
+        .no-popups { text-align: center; padding: 60px; color: #555; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+<div class="container">
+    <div class="page-header">
+        <p class="page-title">Popups</p>
+        <a href="/popups/new" class="btn btn-pink">+ Log Popup</a>
+    </div>
+
+    {% if popups %}
+        {% for popup in popups %}
+        <a href="/popups/{{ popup[0] }}" class="popup-card">
+            <div>
+                <p class="popup-name">{{ popup[1] }}</p>
+                <p class="popup-date">{{ popup[2] }} · {{ popup[3] }}</p>
+            </div>
+            <span class="popup-arrow">→</span>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="no-popups">
+            <p>No popups logged yet. Log your first popup! 🍪</p>
+        </div>
+    {% endif %}
+</div>
+</body>
+</html>

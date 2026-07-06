@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Stock</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 32px; }
+        .section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; }
+        .stock-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #222; }
+        .stock-row:last-child { border-bottom: none; }
+        .stock-name { font-size: 15px; font-weight: 700; }
+        .stock-details { display: flex; gap: 24px; align-items: center; }
+        .stock-qty { font-size: 24px; font-weight: 900; color: #ffe600; }
+        .stock-qty.low { color: #ff6b00; }
+        .stock-reserved { font-size: 12px; color: #888; }
+        .stock-prediction { font-size: 12px; color: #39ff14; }
+        .stock-actions { display: flex; gap: 8px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .btn-green { background: #39ff14; color: #0a0a0a; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .ingredient-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .ingredient-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #0a0a0a; border-radius: 6px; }
+        .ingredient-name { font-size: 13px; }
+        .ingredient-qty { font-size: 14px; font-weight: 700; color: #ffe600; }
+        .ingredient-qty.low { color: #ff6b00; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <p class="page-title">Stock Management</p>
+
+    <!-- Cookie Stock -->
+    <div class="section">
+        <div class="section-header">
+            <p class="section-title">Cookie Stock</p>
+            <a href="/stock/dough" class="btn btn-green">+ Log Dough Made</a>
+            <a href="/stock/restock" class="btn btn-orange" style="background:#ff6b00; color:#fff; padding:8px 16px; font-size:11px;">Restock Planner</a>
+        </div>
+        {% for flavour, quantity, reserved, threshold in cookie_stock %}
+        <div class="stock-row">
+            <div>
+                <p class="stock-name">{{ flavour.replace('_slapp','').replace('_',' ').title() }}</p>
+                <p class="stock-reserved">{{ reserved }} reserved · {{ quantity - reserved }} available · threshold: {{ threshold }}</p>
+                {% for p in predictions %}
+                {% if p['flavour'] == flavour and p['recommended_batch'] > 0 %}
+                <p class="stock-prediction">↑ Make {{ p['recommended_batch'] }} more ({{ p['weeks_to_cover'] }} week supply)</p>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <div class="stock-details">
+                <span class="stock-qty {% if quantity - reserved <= threshold %}low{% endif %}">{{ quantity }}</span>
+                <div class="stock-actions">
+                    <a href="/stock/cookie/{{ flavour }}/add" class="btn btn-yellow">+ Add</a>
+                    <a href="/stock/cookie/{{ flavour }}/set" class="btn btn-outline">Set</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Ingredient Stock -->
+    <div class="section">
+        <div class="section-header">
+            <p class="section-title">Ingredient Stock</p>
+            <a href="/stock/ingredients/set" class="btn btn-yellow">Update Stock</a>
+        </div>
+        <div class="ingredient-grid">
+            {% for name, qty, unit, threshold in ingredient_stock %}
+            <div class="ingredient-row">
+                <span class="ingredient-name">{{ name.replace('_',' ').title() }}</span>
+                <span class="ingredient-qty {% if qty <= threshold %}low{% endif %}">{{ "%.1f"|format(qty) }}{{ unit }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Packaging -->
+    <div class="section">
+        <div class="section-header">
+            <p class="section-title">Packaging</p>
+        </div>
+        {% for box_name, capacity, cost, stock, threshold in packaging %}
+        <div class="stock-row">
+            <div>
+                <p class="stock-name">{{ box_name.replace('_',' ').title() }}</p>
+                <p class="stock-reserved">Holds {{ capacity }} cookies · ₹{{ cost }} per box · threshold: {{ threshold }}</p>
+            </div>
+            <div class="stock-details">
+                <span class="stock-qty {% if stock <= threshold %}low{% endif %}">{{ stock }}</span>
+                <a href="/stock/packaging/{{ box_name }}/add" class="btn btn-yellow">+ Add</a>
+                <a href="/stock/packaging/{{ box_name }}/set" class="btn btn-outline">Set</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — All Orders</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+        .tab { padding: 12px 24px; border-radius: 4px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; color: #888; background: #111; }
+        .tab:hover { color: #f0f0f0; }
+        .tab.active { background: #ff2d78; color: #fff; }
+        .tab.active-delivered { background: #39ff14; color: #0a0a0a; }
+        .tab.active-cancelled { background: #333; color: #f0f0f0; }
+        .tab-count { margin-left: 8px; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+        .search-bar { display: flex; gap: 12px; margin-bottom: 24px; }
+        .search-input { flex: 1; background: #111; border: 1px solid #333; color: #f0f0f0; padding: 10px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; }
+        .search-input:focus { outline: none; border-color: #ff2d78; }
+        .order-card { background: #111; border-radius: 8px; padding: 20px; margin-bottom: 12px; border-left: 4px solid #ff2d78; display: grid; grid-template-columns: auto 1fr auto auto; gap: 20px; align-items: center; }
+        .order-card.delivered { border-left-color: #39ff14; }
+        .order-card.cancelled { border-left-color: #333; opacity: 0.6; }
+        .order-date { font-size: 11px; color: #888; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; }
+        .order-name { font-size: 16px; font-weight: 900; }
+        .order-address { font-size: 12px; color: #888; margin-top: 4px; }
+        .order-items { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+        .item-tag { background: #222; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+        .order-finance { text-align: right; }
+        .order-revenue { font-size: 18px; font-weight: 900; color: #ffe600; }
+        .order-profit { font-size: 12px; color: #39ff14; margin-top: 2px; }
+        .order-actions { display: flex; flex-direction: column; gap: 6px; }
+        .btn-sm { padding: 6px 14px; font-size: 10px; }
+        .btn-green { background: #39ff14; color: #0a0a0a; }
+        .btn-red { background: #ff2d2d; color: #fff; }
+        .no-orders { text-align: center; padding: 60px; color: #555; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="page-header">
+    <p class="page-title">Orders</p>
+    <div style="display:flex; gap:12px;">
+        <a href="/orders/date" class="btn btn-yellow">View by Date</a>
+    </div>
+</div>
+
+    <div class="tabs">
+        <a href="/orders/all?status=pending" class="tab {% if status_filter == 'pending' %}active{% endif %}">
+            Pending <span class="tab-count">{{ pending_count }}</span>
+        </a>
+        <a href="/orders/all?status=delivered" class="tab {% if status_filter == 'delivered' %}active-delivered{% endif %}">
+            Delivered <span class="tab-count">{{ delivered_count }}</span>
+        </a>
+        <a href="/orders/all?status=cancelled" class="tab {% if status_filter == 'cancelled' %}active-cancelled{% endif %}">
+            Cancelled <span class="tab-count">{{ cancelled_count }}</span>
+        </a>
+    </div>
+
+    <form method="GET" action="/orders/all" style="display:flex; gap:12px; margin-bottom:24px; align-items:center;">
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        <select name="search_by" style="background:#111; border:1px solid #333; color:#f0f0f0; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:13px; width:160px;">
+            <option value="name" {% if search_by == 'name' %}selected{% endif %}>Name</option>
+            <option value="phone" {% if search_by == 'phone' %}selected{% endif %}>Phone</option>
+            <option value="order_id" {% if search_by == 'order_id' %}selected{% endif %}>Order #</option>
+        </select>
+        <input type="text" name="search" value="{{ search }}" 
+            placeholder="Search..." 
+            style="flex:1; background:#111; border:1px solid #333; color:#f0f0f0; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:13px;">
+        <button type="submit" style="background:#ff2d78; color:#fff; border:none; padding:12px 20px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; cursor:pointer;">Search</button>
+        {% if search %}
+        <a href="/orders/all?status={{ status_filter }}" style="background:transparent; border:1px solid #333; color:#888; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; text-decoration:none;">Clear</a>
+        {% endif %}
+    </form>
+
+    {% if orders %}
+        {% for order_id, details in orders.items() %}
+        <div class="order-card {{ details['status'] }}">
+            <div>
+                <p class="order-date">{{ details['delivery_date'] }}</p>
+                <p style="font-size: 11px; color: #555; margin-top: 4px;">Order #{{ order_id }}</p>
+            </div>
+            <div>
+                <p class="order-name">{{ details['customer'] }}</p>
+                <p class="order-address">{{ details['phone'] }} · {{ details['address'] }}</p>
+                <div class="order-items">
+                    {% for flavour, quantity in details['items'] %}
+                    <span class="item-tag">{{ quantity }}x {{ flavour.replace('_slapp','').replace('_',' ').title() }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="order-finance">
+                <p class="order-revenue">₹{{ details['revenue'] or 0 }}</p>
+                <p class="order-profit">₹{{ details['profit'] or 0 }} profit</p>
+            </div>
+            <div class="order-actions">
+                {% if details['status'] == 'pending' %}
+                <a href="/orders/{{ order_id }}/deliver" class="btn btn-sm btn-green">Deliver</a>
+                <a href="/orders/{{ order_id }}/cancel" class="btn btn-sm btn-red">Cancel</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-orders">
+            <p>No {{ status_filter }} orders{% if search %} matching "{{ search }}"{% endif %}.</p>
+        </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Weekly Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 32px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; }
+        .week-nav { display: flex; gap: 12px; align-items: center; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .week-label { font-size: 14px; color: #f0f0f0; font-weight: 700; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #111; border-radius: 8px; padding: 20px; border-top: 3px solid #ff2d78; }
+        .stat-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        .stat-value { font-size: 28px; font-weight: 900; color: #ffe600; }
+        .stat-sub { font-size: 12px; color: #555; margin-top: 4px; }
+        .section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .order-row { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; font-size: 13px; }
+        .order-row:last-child { border-bottom: none; }
+        .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+        .status-pending { background: #ff2d7820; color: #ff2d78; border: 1px solid #ff2d78; }
+        .status-delivered { background: #39ff1420; color: #39ff14; border: 1px solid #39ff14; }
+        .status-cancelled { background: #33333320; color: #555; border: 1px solid #333; }
+        .flavour-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; }
+        .flavour-row:last-child { border-bottom: none; }
+        .empty { color: #555; text-align: center; padding: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <a href="/finance" class="btn btn-outline">← Finance</a>
+        <p class="page-title">Weekly Report</p>
+        <div class="week-nav">
+            <a href="/finance/weekly?start={{ prev_start }}&end={{ prev_end }}" class="btn btn-outline">← Prev Week</a>
+            <span class="week-label">{{ start_formatted }} — {{ end_formatted }}</span>
+            <a href="/finance/weekly?start={{ next_start }}&end={{ next_end }}" class="btn btn-outline">Next Week →</a>
+            <a href="/finance/weekly" class="btn btn-yellow">This Week</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <p class="stat-label">Total Orders</p>
+            <p class="stat-value">{{ weekly['total_orders'] or 0 }}</p>
+            <p class="stat-sub">{{ weekly['total_cookies'] or 0 }} cookies</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-label">Revenue</p>
+            <p class="stat-value">₹{{ weekly['revenue'] or 0 }}</p>
+            <p class="stat-sub">Delivered orders only</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-label">Profit</p>
+            <p class="stat-value" style="color: #39ff14;">₹{{ weekly['profit'] or 0 }}</p>
+            <p class="stat-sub">{{ weekly['margin'] or 0 }}% margin</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-label">Best Seller</p>
+            <p class="stat-value" style="font-size:18px;">
+                {% if weekly['best_seller'] %}
+                {{ weekly['best_seller'][0].replace('_slapp','').replace('_',' ').title() }}
+                {% else %}
+                —
+                {% endif %}
+            </p>
+            <p class="stat-sub">{% if weekly['best_seller'] %}{{ weekly['best_seller'][1] }} cookies{% endif %}</p>
+        </div>
+    </div>
+
+    <!-- Flavour breakdown -->
+    {% if weekly['flavour_breakdown'] %}
+    <div class="section">
+        <p class="section-title">By Flavour</p>
+        {% for flavour, total in weekly['flavour_breakdown'] %}
+        <div class="flavour-row">
+            <span>{{ flavour.replace('_slapp','').replace('_',' ').title() }}</span>
+            <span style="color:#ffe600; font-weight:700;">{{ total }} cookies</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- All orders this week -->
+    <div class="section">
+        <p class="section-title">All Orders This Week</p>
+        {% if all_orders %}
+            {% for order in all_orders %}
+            <div class="order-row">
+                <span style="color:#555;">{{ order[2] }}</span>
+                <span style="font-weight:700;">{{ order[1] }}</span>
+                <span class="status-badge status-{{ order[3] }}">{{ order[3] }}</span>
+                <span style="color:#ffe600;">₹{{ order[4] or 0 }}</span>
+                <span style="color:#39ff14;">₹{{ order[5] or 0 }} profit</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty">No orders this week.</p>
+        {% endif %}
+    </div>
+
+</div>
+
+</body>
+</html>

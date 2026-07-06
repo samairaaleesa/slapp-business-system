@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #f0f0f0;
+            font-family: 'Arial Black', Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: #111;
+            border-bottom: 3px solid #ff2d78;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            color: #ff2d78;
+            letter-spacing: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #f0f0f0;
+            text-decoration: none;
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #ff2d78;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .page-title {
+            font-size: 13px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 32px;
+        }
+
+        .alerts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .alert-card {
+            background: #111;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #ff2d78;
+        }
+
+        .alert-card.warning {
+            border-left-color: #ff6b00;
+        }
+
+        .alert-card.good {
+            border-left-color: #39ff14;
+        }
+
+        .alert-title {
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .alert-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #222;
+            font-size: 14px;
+        }
+
+        .alert-item:last-child {
+            border-bottom: none;
+        }
+
+        .alert-value {
+            color: #ff6b00;
+            font-weight: 700;
+        }
+
+        .good-value {
+            color: #39ff14;
+        }
+
+        .section {
+            background: #111;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #ff2d78;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #222;
+        }
+
+        .bake-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .bake-item:last-child {
+            border-bottom: none;
+        }
+
+        .bake-flavour {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .bake-count {
+            font-size: 24px;
+            font-weight: 900;
+            color: #ffe600;
+        }
+
+        .no-orders {
+            color: #555;
+            font-size: 14px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Arial Black', Arial, sans-serif;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn-pink {
+            background: #ff2d78;
+            color: #fff;
+        }
+
+        .btn-yellow {
+            background: #ffe600;
+            color: #0a0a0a;
+        }
+
+        .btn-green {
+            background: #39ff14;
+            color: #0a0a0a;
+        }
+
+        .btn-orange {
+            background: #ff6b00;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <p class="page-title">Dashboard — {{ today }}</p>
+
+<div class="alerts-grid">
+    <!-- Cookie alerts -->
+    <div class="alert-card {% if low_cookies %}warning{% else %}good{% endif %}">
+        <p class="alert-title">Cookie Stock Alerts</p>
+        {% if low_cookies %}
+            {% for flavour, qty, reserved, threshold, available in low_cookies %}
+            <div class="alert-item">
+                <span>{{ flavour.replace('_slapp', '').replace('_', ' ').title() }}</span>
+                <span class="alert-value">{{ available }} left</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert-item">
+                <span>All good!</span>
+                <span class="good-value">✓</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Ingredient alerts -->
+    <div class="alert-card {% if low_ingredients %}warning{% else %}good{% endif %}">
+        <p class="alert-title">Ingredient Alerts</p>
+        {% if low_ingredients %}
+            {% for ingredient, qty, threshold in low_ingredients[:5] %}
+            <div class="alert-item">
+                <span>{{ ingredient.replace('_', ' ').title() }}</span>
+                <span class="alert-value">{{ "%.1f"|format(qty) }}g left</span>
+            </div>
+            {% endfor %}
+            {% if low_ingredients|length > 5 %}
+            <div class="alert-item">
+                <span style="color: #888; font-size: 12px;">+{{ low_ingredients|length - 5 }} more</span>
+                <a href="/stock" style="color: #ff2d78; font-size: 12px;">see all</a>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="alert-item">
+                <span>All good!</span>
+                <span class="good-value">✓</span>
+            </div>
+        {% endif %}
+    </div>
+
+
+    <!-- Packaging alerts -->
+    <div class="alert-card {% if low_packaging %}warning{% else %}good{% endif %}">
+        <p class="alert-title">Packaging Alerts</p>
+        {% if low_packaging %}
+            {% for box, stock, threshold in low_packaging %}
+            <div class="alert-item">
+                <span>{{ box.replace('_', ' ').title() }}</span>
+                <span class="alert-value">{{ stock }} left</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert-item">
+                <span>All good!</span>
+                <span class="good-value">✓</span>
+            </div>
+        {% endif %}
+    </div>        
+</div>
+    <!-- Bake Brief -->
+    <div class="section">
+        <p class="section-title">Tomorrow's Bake Brief — {{ tomorrow }}</p>
+        {% if bake_brief %}
+            {% for flavour, total in bake_brief %}
+            <div class="bake-item">
+                <span class="bake-flavour">{{ flavour.replace('_slapp', '').replace('_', ' ').title() }}</span>
+                <span class="bake-count">{{ total }} cookies</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-orders">No orders for tomorrow. Enjoy the break! 🍪</p>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section">
+        <p class="section-title">Quick Actions</p>
+        <div class="quick-actions">
+            <a href="/orders/new" class="btn btn-pink">+ New Order</a>
+            <a href="/orders" class="btn btn-yellow">View Orders</a>
+            <a href="/stock/dough" class="btn btn-green">Log Dough Made</a>
+            <a href="/stock" class="btn btn-orange">Update Stock</a>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

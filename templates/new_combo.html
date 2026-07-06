@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — New Combo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 500px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 32px; }
+        .form-section { background: #111; border-radius: 8px; padding: 24px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        input { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 12px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 14px; }
+        input:focus { outline: none; border-color: #ff2d78; }
+        .btn { padding: 14px 32px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; width: 100%; text-align: center; margin-top: 8px; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+<div class="container">
+    <p class="page-title">New Combo</p>
+    <form method="POST" action="/settings/combos/new">
+        <div class="form-group">
+            <label>Combo Name</label>
+            <input type="text" name="name" placeholder="e.g. buy4get1free" required>
+        </div>
+        <div class="form-group">
+        <label>Combo Type</label>
+        <select name="combo_type" onchange="toggleFields(this.value)" style="width:100%; background:#0a0a0a; border:1px solid #333; color:#f0f0f0; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:14px;">
+            <option value="bogo">Buy X Get Y Free</option>
+            <option value="discount">Percentage Discount</option>
+        </select>
+    </div>
+
+    <div id="bogo-fields">
+        <div class="form-group">
+            <label>Buy Quantity</label>
+            <input type="number" name="buy_quantity" min="1" placeholder="e.g. 4">
+        </div>
+        <div class="form-group">
+            <label>Free Quantity</label>
+            <input type="number" name="free_quantity" min="1" placeholder="e.g. 1">
+        </div>
+    </div>
+
+    <div id="discount-fields" style="display:none;">
+        <div class="form-group">
+            <label>Discount Percentage</label>
+            <input type="number" name="discount_percentage" min="0.01" max="100" step="0.01" placeholder="e.g. 10.5">
+        </div>
+    </div>
+
+    <script>
+    function toggleFields(type) {
+        document.getElementById('bogo-fields').style.display = type === 'bogo' ? 'block' : 'none';
+        document.getElementById('discount-fields').style.display = type === 'discount' ? 'block' : 'none';
+    }
+    </script>
+    <button type="submit" class="btn btn-pink">Add Combo</button>
+    <a href="/settings" class="btn btn-outline">Cancel</a>
+    </form>
+</div>
+</body>
+</html>

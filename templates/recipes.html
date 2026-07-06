@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Recipes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 900px; margin: 0 auto; padding: 32px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .btn-red { background: #ff2d2d; color: #fff; }
+        .recipe-card { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #ff2d78; cursor: pointer; transition: border-color 0.2s; }
+        .recipe-card:hover { border-left-color: #ffe600; }
+        .recipe-card.inactive { opacity: 0.4; border-left-color: #333; }
+        .recipe-name { font-size: 20px; font-weight: 900; }
+        .recipe-yield { font-size: 12px; color: #888; margin-top: 4px; letter-spacing: 2px; }
+        .recipe-actions { display: flex; gap: 8px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+    {% for recipe in recipes %}
+    <div class="recipe-card {% if not recipe[3] %}inactive{% endif %}">
+        <div>
+            <p class="recipe-name">{{ recipe[1].replace('_slapp','').replace('_',' ').title() }}</p>
+            <p class="recipe-yield">Base yield: {{ recipe[2] }} cookies · {% if recipe[3] %}Active{% else %}Inactive{% endif %}</p>
+        </div>
+        <div class="recipe-actions">
+            <a href="/recipes/{{ recipe[1] }}" class="btn btn-yellow">View / Edit</a>
+            {% if recipe[3] %}
+            <a href="/recipes/{{ recipe[1] }}/delete" class="btn btn-red">Deactivate</a>
+            {% else %}
+            <a href="/recipes/{{ recipe[1] }}/activate" class="btn btn-green">Activate</a>
+{% endif %}
+<a href="/recipes/{{ recipe[1] }}/hard_delete" class="btn btn-outline" 
+   onclick="return confirm('Permanently delete? Cannot be undone.')">🗑 Delete</a>
+        </div>
+    </div>
+    {% endfor %}
+    <!-- Add New Recipe -->
+    <div class="section" style="background:#111; border-radius:8px; padding:24px; margin-top:16px;">
+        <p style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#ff2d78; margin-bottom:20px;">Add New Recipe</p>
+        <form method="POST" action="/recipes/new" style="display:flex; gap:12px; align-items:center;">
+            <input type="text" name="name" placeholder="Recipe name (e.g. matcha)" 
+                   style="flex:1; background:#0a0a0a; border:1px solid #333; color:#f0f0f0; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:14px;">
+            <input type="number" name="base_yield" placeholder="Base yield" min="1"
+                   style="width:120px; background:#0a0a0a; border:1px solid #333; color:#f0f0f0; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:14px;">
+            <button type="submit" class="btn btn-pink">+ Add</button>
+        </form>
+    </div>
+</div>
+<a href="/recipes/scale" class="btn btn-yellow">Scale Recipe</a>
+
+</body>
+</html>

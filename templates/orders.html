@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Orders</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; }
+        .btn { padding: 12px 24px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .btn-green { background: #39ff14; color: #0a0a0a; }
+        .btn-red { background: #ff2d2d; color: #fff; }
+        .date-filter { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .date-input { background: #111; border: 1px solid #333; color: #f0f0f0; padding: 10px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; }
+        .bake-brief { background: #111; border-radius: 8px; padding: 20px; margin-bottom: 24px; border-left: 4px solid #ffe600; }
+        .bake-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ffe600; margin-bottom: 12px; }
+        .bake-items { display: flex; gap: 24px; flex-wrap: wrap; }
+        .bake-item { display: flex; flex-direction: column; align-items: center; }
+        .bake-count { font-size: 32px; font-weight: 900; color: #ffe600; }
+        .bake-flavour { font-size: 11px; color: #888; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+        .order-card { background: #111; border-radius: 8px; padding: 20px; margin-bottom: 16px; border-left: 4px solid #ff2d78; }
+        .order-card.delivered { border-left-color: #39ff14; opacity: 0.7; }
+        .order-card.cancelled { border-left-color: #555; opacity: 0.5; }
+        .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .order-id { font-size: 11px; letter-spacing: 3px; color: #888; }
+        .order-name { font-size: 18px; font-weight: 900; margin-top: 4px; }
+        .order-status { padding: 4px 12px; border-radius: 20px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+        .status-pending { background: #ff2d7820; color: #ff2d78; border: 1px solid #ff2d78; }
+        .status-delivered { background: #39ff1420; color: #39ff14; border: 1px solid #39ff14; }
+        .status-cancelled { background: #55555520; color: #555; border: 1px solid #555; }
+        .order-address { font-size: 13px; color: #888; margin-bottom: 12px; }
+        .order-items { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+        .order-item-tag { background: #222; padding: 6px 12px; border-radius: 20px; font-size: 13px; }
+        .order-actions { display: flex; gap: 8px; }
+        .no-orders { text-align: center; padding: 60px; color: #555; }
+        .no-orders-emoji { font-size: 48px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <div class="page-header">
+        <p class="page-title">Orders</p>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="date-filter">
+    <form method="GET" action="/orders/date" style="display:flex; gap:12px; align-items:center;">
+        <input type="date" name="date" value="{{ delivery_date }}" class="date-input">
+        <button type="submit" class="btn btn-yellow">View by Date</button>
+    </form>
+    <form method="GET" action="/orders/date" style="display:flex; gap:12px; align-items:center;">
+        <input type="text" name="search" value="{{ search }}" placeholder="Search by name..." class="date-input">
+        <button type="submit" class="btn btn-pink">Search</button>
+        {% if search %}
+        <a href="/orders/date" class="btn btn-outline">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+    <!-- Orders -->
+    {% if orders %}
+        {% for order_id, details in orders.items() %}
+        <div class="order-card {{ details['status'] }}">
+            <div class="order-header">
+                <div>
+                    <p class="order-id">ORDER #{{ order_id }}</p>
+                    <p class="order-name">{{ details['customer'] }}</p>
+                    <p style="font-size:13px; color:#888;">{{ details['phone'] }}</p>
+                </div>
+                <span class="order-status status-{{ details['status'] }}">{{ details['status'] }}</span>
+            </div>
+            <p class="order-address">📍 {{ details['address'] }}</p>
+            <div class="order-items">
+                {% for flavour, quantity in details['items'] %}
+                <span class="order-item-tag">{{ quantity }}x {{ flavour.replace('_slapp', '').replace('_', ' ').title() }}</span>
+                {% endfor %}
+            </div>
+            <div class="order-actions">
+                {% if details['status'] == 'pending' %}
+                <a href="/orders/{{ order_id }}/deliver" class="btn btn-green">Mark Delivered</a>
+                <a href="/orders/{{ order_id }}/cancel" class="btn btn-red">Cancel</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-orders">
+            <div class="no-orders-emoji">🍪</div>
+            <p>No orders for this date.</p>
+        </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

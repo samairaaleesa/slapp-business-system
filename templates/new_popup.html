@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — New Popup</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 700px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 32px; }
+        .form-section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .form-group { margin-bottom: 16px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        label { display: block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        input, textarea { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 12px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 14px; }
+        input:focus, textarea:focus { outline: none; border-color: #ff2d78; }
+        .btn { padding: 14px 32px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; width: 100%; text-align: center; margin-top: 8px; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+<div class="container">
+    <p class="page-title">Log New Popup</p>
+    <form method="POST" action="/popups/new">
+        <div class="form-section">
+            <p class="section-title">Event Details</p>
+            <div class="form-group">
+                <label>Event Name</label>
+                <input type="text" name="event_name" placeholder="e.g. SLAPP @ Christ University" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Event Date</label>
+                    <input type="date" name="event_date">
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" name="location" placeholder="e.g. Christ University">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <p class="section-title">Sales Data</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Units Produced</label>
+                    <input type="number" name="units_produced" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Units Sold</label>
+                    <input type="number" name="units_sold" min="0" value="0">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Units Given Free</label>
+                    <input type="number" name="units_given_free" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Revenue (₹)</label>
+                    <input type="number" name="revenue" min="0" step="0.01" value="0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Investment (₹)</label>
+                <input type="number" name="investment" min="0" step="0.01" value="0">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <p class="section-title">Game Data (Optional)</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Game Players</label>
+                    <input type="number" name="game_players" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Game Revenue (₹)</label>
+                    <input type="number" name="game_revenue" min="0" step="0.01" value="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <p class="section-title">Notes</p>
+            <div class="form-group">
+                <textarea name="notes" rows="3" placeholder="Any notes about this popup..."></textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-pink">Log Popup</button>
+        <a href="/popups" class="btn btn-outline">Cancel</a>
+    </form>
+</div>
+</body>
+</html>

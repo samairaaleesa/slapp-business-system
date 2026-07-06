@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Popup Detail</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 700px; margin: 0 auto; padding: 32px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .event-name { font-size: 32px; font-weight: 900; color: #ff2d78; margin-bottom: 4px; }
+        .event-meta { font-size: 13px; color: #888; margin-bottom: 32px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #111; border-radius: 8px; padding: 20px; text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 900; color: #ffe600; }
+        .stat-label { font-size: 10px; color: #888; letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; }
+        .section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 14px; }
+        .row:last-child { border-bottom: none; }
+        .profit { color: #39ff14; font-size: 28px; font-weight: 900; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+<div class="container">
+    <div class="page-header">
+        <a href="/popups" class="btn btn-outline">← Back</a>
+    </div>
+
+    <p class="event-name">{{ popup[1] }}</p>
+    <p class="event-meta">{{ popup[2] }} · {{ popup[3] }}</p>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <p class="stat-value">{{ popup[4] }}</p>
+            <p class="stat-label">Produced</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-value">{{ popup[5] }}</p>
+            <p class="stat-label">Sold</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-value">{{ popup[6] or 0 }}</p>
+            <p class="stat-label">Given Free</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <p class="section-title">Financials</p>
+        <div class="row">
+            <span>Cookie Revenue</span>
+            <span style="color:#ffe600;">₹{{ popup[7] or 0 }}</span>
+        </div>
+        <div class="row">
+            <span>Game Revenue</span>
+            <span style="color:#ffe600;">₹{{ popup[10] or 0 }}</span>
+        </div>
+        <div class="row">
+            <span>Total Revenue</span>
+            <span style="color:#ffe600; font-weight:900;">₹{{ (popup[7] or 0) + (popup[10] or 0) }}</span>
+        </div>
+        <div class="row">
+            <span>Investment</span>
+            <span style="color:#ff6b00;">₹{{ popup[8] or 0 }}</span>
+        </div>
+        <div class="row" style="margin-top:8px; padding-top:16px; border-top:2px solid #333;">
+            <span style="font-weight:700;">Profit</span>
+            <span class="profit">₹{{ (popup[7] or 0) + (popup[10] or 0) - (popup[8] or 0) }}</span>
+        </div>
+    </div>
+
+    {% if popup[9] %}
+    <div class="section">
+        <p class="section-title">Game</p>
+        <div class="row">
+            <span>Players</span>
+            <span style="color:#ffe600;">{{ popup[9] }}</span>
+        </div>
+        <div class="row">
+            <span>Revenue</span>
+            <span style="color:#ffe600;">₹{{ popup[10] or 0 }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if popup[11] %}
+    <div class="section">
+        <p class="section-title">Notes</p>
+        <p style="font-size:14px; color:#888; line-height:1.6;">{{ popup[11] }}</p>
+    </div>
+    {% endif %}
+
+</div>
+</body>
+</html>

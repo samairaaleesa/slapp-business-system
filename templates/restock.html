@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Restock</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 700px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        .page-subtitle { font-size: 13px; color: #555; margin-bottom: 32px; }
+        .flavour-card { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 16px; border-left: 4px solid #ff6b00; }
+        .flavour-name { font-size: 20px; font-weight: 900; margin-bottom: 8px; }
+        .flavour-stock { font-size: 13px; color: #888; margin-bottom: 16px; }
+        .prediction-badge { background: #39ff1420; border: 1px solid #39ff14; color: #39ff14; padding: 4px 12px; border-radius: 20px; font-size: 11px; letter-spacing: 2px; display: inline-block; margin-bottom: 16px; }
+        .input-row { display: flex; align-items: center; gap: 12px; }
+        .input-label { font-size: 11px; color: #888; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; }
+        .portions-input { background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 10px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 16px; font-weight: 900; width: 120px; text-align: center; }
+        .portions-input:focus { outline: none; border-color: #ff6b00; }
+        .use-prediction { background: transparent; border: 1px solid #39ff14; color: #39ff14; padding: 8px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+        .no-alerts { text-align: center; padding: 60px; color: #555; }
+        .btn { padding: 14px 32px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; width: 100%; text-align: center; margin-top: 16px; }
+        .btn-orange { background: #ff6b00; color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <p class="page-title">Restock Planner</p>
+    <p class="page-subtitle">Enter how many portions you want to make for each low stock flavour.</p>
+
+    {% if restock_items %}
+    <form method="POST" action="/stock/restock/shopping">
+        {% for item in restock_items %}
+        <div class="flavour-card">
+            <p class="flavour-name">{{ item['flavour'].replace('_slapp','').replace('_',' ').title() }}</p>
+            <p class="flavour-stock">Available: {{ item['available'] }} · Threshold: {{ item['threshold'] }}</p>
+            
+            {% if item['has_prediction'] %}
+            <span class="prediction-badge">Recommended: {{ item['recommended'] }} portions (3 week supply)</span>
+            {% endif %}
+            
+            <div class="input-row">
+                <span class="input-label">Portions to make:</span>
+                <input type="number" 
+                       name="portions_{{ item['flavour'] }}" 
+                       class="portions-input"
+                       value="{{ item['recommended'] if item['has_prediction'] else '' }}"
+                       min="0"
+                       placeholder="0" required>
+                {% if item['has_prediction'] %}
+                <button type="button" class="use-prediction" 
+                        data-value="{{ item['recommended'] }}"
+                        onclick="this.previousElementSibling.value=this.dataset.value">
+                    Use recommendation
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-orange">Generate Shopping List →</button>
+        <a href="/stock" class="btn btn-outline">Cancel</a>
+    </form>
+
+    {% else %}
+    <div class="no-alerts">
+        <p>All cookie stock is above threshold. No restock needed! 🍪</p>
+        <br>
+        <a href="/stock" class="btn btn-outline" style="width: auto; display: inline-block;">Back to Stock</a>
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

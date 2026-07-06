@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Update Ingredient Stock</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 600px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        .page-subtitle { font-size: 12px; color: #555; margin-bottom: 32px; }
+        .form-section { background: #111; border-radius: 8px; padding: 24px; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .ingredient-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; }
+        .ingredient-row:last-child { border-bottom: none; }
+        .ingredient-name { font-size: 14px; font-weight: 700; }
+        .ingredient-unit { font-size: 11px; color: #888; margin-top: 2px; }
+        .qty-input { width: 100px; background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 8px 12px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 14px; text-align: center; }
+        .qty-input:focus { outline: none; border-color: #ffe600; }
+        .btn { padding: 14px 32px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; width: 100%; text-align: center; margin-top: 16px; }
+        .btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <p class="page-title">Update Ingredient Stock</p>
+    <p class="page-subtitle">Enter your current quantities. Leave blank to keep existing value.</p>
+
+    <form method="POST" action="/stock/ingredients/set">
+        <div class="form-section">
+            <p class="section-title">Current Stock Count</p>
+            {% for name, qty, unit in ingredients %}
+            <div class="ingredient-row">
+                <div>
+                    <p class="ingredient-name">{{ name.replace('_',' ').title() }}</p>
+                    <p class="ingredient-unit">Current: {{ qty }}{{ unit }}</p>
+                </div>
+                <input type="number" 
+                       name="qty_{{ name }}" 
+                       class="qty-input" 
+                       placeholder="{{ qty }}"
+                       min="0"
+                       step="0.1" required>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <button type="submit" class="btn btn-yellow">Save Stock Count</button>
+        <a href="/stock" class="btn btn-outline">Cancel</a>
+    </form>
+</div>
+
+</body>
+</html>
