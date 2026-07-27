@@ -326,10 +326,10 @@ def stock_page():
     cookie_stock = cursor.fetchall()
     cursor.execute('SELECT ingredient_name, quantity, unit, low_stock_threshold FROM ingredient_stock ORDER BY ingredient_name')
     ingredient_stock = cursor.fetchall()
-    cursor.execute('SELECT box_name, capacity, cost_per_box, stock, low_stock_threshold FROM packaging')
+    cursor.execute('SELECT box_name, capacity, cost_per_box, stock, low_stock_threshold, is_active FROM packaging ORDER BY is_active DESC, box_name')
     packaging = cursor.fetchall()
     conn.close()
-    
+
     predictions = predict_all_flavours()
     
     return render_template('stock.html',

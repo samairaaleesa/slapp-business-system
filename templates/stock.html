@@ -107,10 +107,14 @@
         <div class="section-header">
             <p class="section-title">Packaging</p>
         </div>
-        {% for box_name, capacity, cost, stock, threshold in packaging %}
-        <div class="stock-row">
+        {% for box_name, capacity, cost, stock, threshold, is_active in packaging %}
+        <div class="stock-row" {% if not is_active %}style="opacity:0.5;"{% endif %}>
             <div>
-                <p class="stock-name">{{ box_name.replace('_',' ').title() }}</p>
+                <p class="stock-name">{{ box_name.replace('_',' ').title() }}
+                    <span style="font-size:10px; letter-spacing:1px; text-transform:uppercase; padding:2px 8px; border-radius:10px; margin-left:8px; {% if is_active %}background:#39ff1420; color:#39ff14; border:1px solid #39ff14;{% else %}background:#33333320; color:#555; border:1px solid #333;{% endif %}">
+                        {% if is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </p>
                 <p class="stock-reserved">Holds {{ capacity }} cookies · ₹{{ cost }} per box · threshold: {{ threshold }}</p>
             </div>
             <div class="stock-details">
