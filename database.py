@@ -1,5 +1,8 @@
 import psycopg2
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DB_CONFIG = {
     'dbname': os.environ.get('SLAPP_DB_NAME', 'slapp_db'),
