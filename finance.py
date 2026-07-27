@@ -157,23 +157,42 @@ def calculate_order_revenue(order_id, manual_discount_pct=None):
     }
 
 def calculate_packaging_cost(total_cookies):
+    """Estimates packaging cost using the same greedy largest-box-first
+    allocation actually used at delivery time (stock.deduct_packaging_for_order),
+    across all currently active box types — not hardcoded to one box name.
+    This is an estimate (doesn't check current stock, since boxes may be
+    bought before delivery), but reflects real box costs, not just one box type."""
+    if total_cookies <= 0:
+        return 0
+
     conn = get_connection()
     cursor = conn.cursor()
-    
     cursor.execute('''
         SELECT capacity, cost_per_box FROM packaging
-        WHERE box_name = 'standard_box'
+        WHERE is_active = 1
+        ORDER BY capacity DESC
     ''')
-    
-    box = cursor.fetchone()
+    boxes = cursor.fetchall()
     conn.close()
-    
-    if not box:
+
+    if not boxes:
         return 0
-    
-    capacity, cost_per_box = box
-    boxes_needed = math.ceil(total_cookies / capacity)
-    return round(boxes_needed * cost_per_box, 2)
+
+    remaining = total_cookies
+    cost = 0
+    for capacity, cost_per_box in boxes:
+        if remaining <= 0:
+            break
+        count = remaining // capacity
+        if count > 0:
+            cost += count * cost_per_box
+            remaining -= count * capacity
+
+    if remaining > 0:
+        smallest_cost_per_box = boxes[-1][1]
+        cost += smallest_cost_per_box
+
+    return round(cost, 2)
 
 def calculate_order_profit(order_id, manual_discount_pct=None):
     cost = calculate_order_cost(order_id)

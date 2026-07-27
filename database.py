@@ -153,7 +153,8 @@ def create_tables():
             capacity INTEGER NOT NULL,
             cost_per_box REAL DEFAULT 0,
             stock INTEGER DEFAULT 0,
-            low_stock_threshold INTEGER DEFAULT 20
+            low_stock_threshold INTEGER DEFAULT 20,
+            is_active INTEGER DEFAULT 1
         )
     ''')
 

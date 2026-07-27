@@ -149,13 +149,24 @@
     <!-- Packaging -->
     <div class="section">
         <p class="section-title">Packaging</p>
-        {% for box_name, capacity, cost, stock, threshold in packaging %}
+        {% for box_name, capacity, cost, stock, threshold, is_active in packaging %}
         <div class="row">
             <div>
-                <p class="row-name">{{ box_name.replace('_',' ').title() }}</p>
-                <p style="font-size:12px; color:#888;">Holds {{ capacity }} · ₹{{ cost }} per box · threshold: {{ threshold }}</p>
+                <p class="row-name">{{ box_name.replace('_',' ').title() }}
+                    <span class="combo-badge {% if not is_active %}inactive{% endif %}" style="margin-left:8px;">
+                        {% if is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </p>
+                <p style="font-size:12px; color:#888;">Holds {{ capacity }} · ₹{{ cost }} per box · stock: {{ stock }} · threshold: {{ threshold }}</p>
             </div>
-            <a href="/settings/packaging/{{ box_name }}/edit" class="btn btn-yellow">Edit</a>
+            <div class="actions">
+                <a href="/settings/packaging/{{ box_name }}/edit" class="btn btn-yellow">Edit</a>
+                {% if is_active %}
+                <a href="/settings/packaging/{{ box_name }}/deactivate" class="btn btn-outline">Deactivate</a>
+                {% else %}
+                <a href="/settings/packaging/{{ box_name }}/activate" class="btn btn-green">Activate</a>
+                {% endif %}
+            </div>
         </div>
         {% endfor %}
         <div style="margin-top:16px;">

@@ -3,7 +3,7 @@ from orders import add_customer, create_order, cancel_order, update_order, updat
 from stock import check_low_stock, check_low_ingredients, check_low_packaging, log_dough_made, log_order_delivered, check_stock_for_order, set_cookie_stock, add_cookie_stock, set_ingredient_stock, add_ingredient_stock
 from finance import calculate_order_profit, get_weekly_report, get_monthly_report, get_custom_report, get_shopping_list
 from prediction import predict_all_flavours
-from management import get_all_recipes, get_recipe_with_ingredients, add_recipe, delete_recipe, add_ingredient_to_recipe, remove_ingredient_from_recipe, update_ingredient_amount, get_all_pricing, update_flavour_price, get_all_combos, add_combo, deactivate_combo, get_all_customers, get_customer_orders, update_customer, delete_customer, update_ingredient_price, update_cookie_threshold, update_ingredient_threshold, get_all_delivery_zones, add_delivery_zone, update_delivery_zone, deactivate_delivery_zone, activate_delivery_zone
+from management import get_all_recipes, get_recipe_with_ingredients, add_recipe, delete_recipe, add_ingredient_to_recipe, remove_ingredient_from_recipe, update_ingredient_amount, get_all_pricing, update_flavour_price, get_all_combos, add_combo, deactivate_combo, get_all_customers, get_customer_orders, update_customer, delete_customer, update_ingredient_price, update_cookie_threshold, update_ingredient_threshold, get_all_delivery_zones, add_delivery_zone, update_delivery_zone, deactivate_delivery_zone, activate_delivery_zone, deactivate_packaging, activate_packaging
 from datetime import date, timedelta
 from cashflow import get_balance, add_transaction, get_transactions, get_spending_summary, set_initial_balance
 import math
@@ -222,29 +222,27 @@ def new_order():
                 zones=zones,
                 warnings=warnings
             )
-        # check packaging
+        # check packaging (across all active box types, matching real delivery-time allocation)
         from database import get_connection
         conn = get_connection()
         cursor = conn.cursor()
         total_cookies = sum(items.values())
-        cursor.execute('SELECT capacity, stock FROM packaging WHERE box_name = %s', ('standard_box',))
-        box = cursor.fetchone()
+        cursor.execute('SELECT capacity, stock FROM packaging WHERE is_active = 1')
+        boxes = cursor.fetchall()
+        total_capacity = sum(cap * stock for cap, stock in boxes)
         conn.close()
 
-        if box:
-            capacity, stock = box
-            boxes_needed = math.ceil(total_cookies / capacity)
-            if stock < boxes_needed:
-                recipes = get_all_recipes()
-                combos = get_all_combos()
-                zones = get_all_delivery_zones()
-                return render_template('new_order.html',
-                    recipes=recipes,
-                    combos=combos,
-                    zones=zones,
-                    warnings=warnings,
-                    packaging_warning=f'Need {boxes_needed} boxes but only {stock} in stock!'
-                )
+        if total_capacity < total_cookies:
+            recipes = get_all_recipes()
+            combos = get_all_combos()
+            zones = get_all_delivery_zones()
+            return render_template('new_order.html',
+                recipes=recipes,
+                combos=combos,
+                zones=zones,
+                warnings=warnings,
+                packaging_warning=f'Need to pack {total_cookies} cookies but total box capacity available is {total_capacity}'
+            )
 
         customer_id = add_customer(name, phone, address)
         order_id = create_order(customer_id, delivery_date, address, items, notes, delivery_required, delivery_zone_id=delivery_zone_id)
@@ -295,22 +293,20 @@ def bulk_order():
         conn = get_connection()
         cursor = conn.cursor()
         total_cookies = sum(items.values())
-        cursor.execute('SELECT capacity, stock FROM packaging WHERE box_name = %s', ('standard_box',))
-        box = cursor.fetchone()
+        cursor.execute('SELECT capacity, stock FROM packaging WHERE is_active = 1')
+        boxes = cursor.fetchall()
+        total_capacity = sum(cap * stock for cap, stock in boxes)
         conn.close()
 
-        if box:
-            capacity, stock = box
-            boxes_needed = math.ceil(total_cookies / capacity)
-            if stock < boxes_needed:
-                recipes = get_all_recipes()
-                zones = get_all_delivery_zones()
-                return render_template('bulk_order.html',
-                    recipes=recipes,
-                    zones=zones,
-                    warnings=warnings,
-                    packaging_warning=f'Need {boxes_needed} boxes but only {stock} in stock!'
-                )
+        if total_capacity < total_cookies:
+            recipes = get_all_recipes()
+            zones = get_all_delivery_zones()
+            return render_template('bulk_order.html',
+                recipes=recipes,
+                zones=zones,
+                warnings=warnings,
+                packaging_warning=f'Need to pack {total_cookies} cookies but total box capacity available is {total_capacity}'
+            )
 
         customer_id = add_customer(name, phone, address)
         order_id = create_order(customer_id, delivery_date, address, items, notes, delivery_required, bulk_discount_pct, delivery_zone_id)
@@ -741,7 +737,7 @@ def settings_page():
     cookie_thresholds = cursor.fetchall()
     cursor.execute('SELECT ingredient_name, low_stock_threshold, unit FROM ingredient_stock ORDER BY ingredient_name')
     ingredient_thresholds = cursor.fetchall()
-    cursor.execute('SELECT box_name, capacity, cost_per_box, stock, low_stock_threshold FROM packaging')
+    cursor.execute('SELECT box_name, capacity, cost_per_box, stock, low_stock_threshold, is_active FROM packaging ORDER BY is_active DESC, box_name')
     packaging = cursor.fetchall()
     conn.close()
 
@@ -753,6 +749,16 @@ def settings_page():
         ingredient_thresholds=ingredient_thresholds,
         packaging=packaging
     )
+
+@app.route('/settings/packaging/<box_name>/deactivate')
+def deactivate_packaging_route(box_name):
+    deactivate_packaging(box_name)
+    return redirect(url_for('settings_page'))
+
+@app.route('/settings/packaging/<box_name>/activate')
+def activate_packaging_route(box_name):
+    activate_packaging(box_name)
+    return redirect(url_for('settings_page'))
 
 @app.route('/settings/zones/<int:zone_id>/deactivate')
 def deactivate_zone_route(zone_id):
@@ -1269,7 +1275,7 @@ def edit_order(order_id):
         total_cookies = sum(items.values())
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT capacity, stock FROM packaging')
+        cursor.execute('SELECT capacity, stock FROM packaging WHERE is_active = 1')
         boxes = cursor.fetchall()
         total_capacity = sum(cap * stock for cap, stock in boxes)
         conn.close()

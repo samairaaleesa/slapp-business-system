@@ -296,7 +296,7 @@ def edit_order_items_tool(order_id, items):
     total_cookies = sum(items.values())
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT capacity, stock FROM packaging ORDER BY capacity DESC')
+    cursor.execute('SELECT capacity, stock FROM packaging WHERE is_active = 1 ORDER BY capacity DESC')
     boxes = cursor.fetchall()
     total_capacity = sum(cap * stock for cap, stock in boxes)
     conn.close()

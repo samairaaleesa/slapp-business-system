@@ -312,6 +312,26 @@ def add_packaging(box_name, capacity, cost_per_box, stock=0, low_stock_threshold
     conn.close()
     print(f"Box {box_name} added!")
 
+def deactivate_packaging(box_name):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('UPDATE packaging SET is_active = 0 WHERE box_name = %s', (box_name,))
+
+    conn.commit()
+    conn.close()
+    print(f"Packaging {box_name} deactivated!")
+
+def activate_packaging(box_name):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('UPDATE packaging SET is_active = 1 WHERE box_name = %s', (box_name,))
+
+    conn.commit()
+    conn.close()
+    print(f"Packaging {box_name} activated!")
+
 def get_all_customers():
     conn = get_connection()
     cursor = conn.cursor()

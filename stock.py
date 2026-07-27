@@ -179,7 +179,7 @@ def deduct_packaging_for_order(order_id):
     cursor.execute('SELECT SUM(quantity) FROM order_items WHERE order_id = %s', (order_id,))
     total_cookies = cursor.fetchone()[0]
     
-    cursor.execute('SELECT box_name, capacity, id FROM packaging WHERE stock > 0 ORDER BY capacity DESC')
+    cursor.execute('SELECT box_name, capacity, id FROM packaging WHERE stock > 0 AND is_active = 1 ORDER BY capacity DESC')
     boxes = cursor.fetchall()
     
     # greedy algorithm — use largest boxes first
