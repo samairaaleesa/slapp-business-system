@@ -1,14 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from orders import add_customer, create_order, cancel_order, update_order, update_order_items, get_orders_by_delivery_date, get_bake_brief, format_orders
 from stock import check_low_stock, check_low_ingredients, check_low_packaging, log_dough_made, log_order_delivered, check_stock_for_order, set_cookie_stock, add_cookie_stock, set_ingredient_stock, add_ingredient_stock
-from finance import calculate_order_profit, get_weekly_report, get_monthly_report, get_shopping_list
+from finance import calculate_order_profit, get_weekly_report, get_monthly_report, get_custom_report, get_shopping_list
 from prediction import predict_all_flavours
-from management import get_all_recipes, get_recipe_with_ingredients, add_recipe, delete_recipe, add_ingredient_to_recipe, remove_ingredient_from_recipe, update_ingredient_amount, get_all_pricing, update_flavour_price, get_all_combos, add_combo, deactivate_combo, get_all_customers, get_customer_orders, update_customer, delete_customer, update_ingredient_price, update_cookie_threshold, update_ingredient_threshold
+from management import get_all_recipes, get_recipe_with_ingredients, add_recipe, delete_recipe, add_ingredient_to_recipe, remove_ingredient_from_recipe, update_ingredient_amount, get_all_pricing, update_flavour_price, get_all_combos, add_combo, deactivate_combo, get_all_customers, get_customer_orders, update_customer, delete_customer, update_ingredient_price, update_cookie_threshold, update_ingredient_threshold, get_all_delivery_zones, add_delivery_zone, update_delivery_zone, deactivate_delivery_zone, activate_delivery_zone
 from datetime import date, timedelta
 from cashflow import get_balance, add_transaction, get_transactions, get_spending_summary, set_initial_balance
 import math
+import json
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = 'slapp-secret-key-change-this-later'
 
 @app.route('/')
 def dashboard():
@@ -44,7 +49,7 @@ def orders_page():
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT o.id, c.name, c.phone, o.address, o.status,
+            SELECT o.id, c.name, c.phone, o.address, o.status, o.delivery_required,
                    oi.flavour, oi.quantity
             FROM orders o
             JOIN customers c ON o.customer_id = c.id
@@ -72,70 +77,72 @@ def all_orders():
     status_filter = request.args.get('status', 'pending')
     search = request.args.get('search', '').strip()
     search_by = request.args.get('search_by', 'name')
-    
+    order_type = request.args.get('order_type', 'regular')
+    bulk_clause = 'o.bulk_discount_pct IS NOT NULL' if order_type == 'bulk' else 'o.bulk_discount_pct IS NULL'
+
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     if search:
         if search_by == 'order_id':
             try:
-                cursor.execute('''
+                cursor.execute(f'''
                     SELECT o.id, c.name, c.phone, o.address, o.status,
-                           o.delivery_date, o.revenue, o.profit,
+                           o.delivery_date, o.revenue, o.profit, o.delivery_required, o.bulk_discount_pct,
                            oi.flavour, oi.quantity
                     FROM orders o
                     JOIN customers c ON o.customer_id = c.id
                     JOIN order_items oi ON o.id = oi.order_id
-                    WHERE o.id = %s
+                    WHERE o.id = %s AND {bulk_clause}
                     ORDER BY o.delivery_date ASC
                 ''', (int(search),))
             except ValueError:
                 cursor.execute('SELECT 1 WHERE false')
         elif search_by == 'phone':
-            cursor.execute('''
+            cursor.execute(f'''
                SELECT o.id, c.name, c.phone, o.address, o.status,
-                       o.delivery_date, o.revenue, o.profit,
+                       o.delivery_date, o.revenue, o.profit, o.delivery_required, o.bulk_discount_pct,
                        oi.flavour, oi.quantity
                 FROM orders o
                 JOIN customers c ON o.customer_id = c.id
                 JOIN order_items oi ON o.id = oi.order_id
-                WHERE c.phone ILIKE %s
+                WHERE c.phone ILIKE %s AND {bulk_clause}
                 ORDER BY o.delivery_date ASC, o.id ASC
             ''', (f'%{search}%',))
         else:
-            cursor.execute('''
+            cursor.execute(f'''
                 SELECT o.id, c.name, c.phone, o.address, o.status,
-                       o.delivery_date, o.revenue, o.profit,
+                       o.delivery_date, o.revenue, o.profit, o.delivery_required, o.bulk_discount_pct,
                        oi.flavour, oi.quantity
                 FROM orders o
                 JOIN customers c ON o.customer_id = c.id
                 JOIN order_items oi ON o.id = oi.order_id
-                WHERE c.name ILIKE %s
+                WHERE c.name ILIKE %s AND {bulk_clause}
                 ORDER BY o.delivery_date ASC, o.id ASC
             ''', (f'%{search}%',))
     else:
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT o.id, c.name, c.phone, o.address, o.status,
-                   o.delivery_date, o.revenue, o.profit,
+                   o.delivery_date, o.revenue, o.profit, o.delivery_required, o.bulk_discount_pct,
                    oi.flavour, oi.quantity
              FROM orders o
             JOIN customers c ON o.customer_id = c.id
             JOIN order_items oi ON o.id = oi.order_id
-            WHERE o.status = %s
+            WHERE o.status = %s AND {bulk_clause}
             ORDER BY o.delivery_date ASC, o.id ASC
         ''', (status_filter,))
-    
+
     rows = cursor.fetchall()
-    
-    cursor.execute('SELECT COUNT(*) FROM orders WHERE status = %s', ('pending',))
+
+    cursor.execute(f'SELECT COUNT(*) FROM orders o WHERE status = %s AND {bulk_clause}', ('pending',))
     pending_count = cursor.fetchone()[0]
-    cursor.execute('SELECT COUNT(*) FROM orders WHERE status = %s', ('delivered',))
+    cursor.execute(f'SELECT COUNT(*) FROM orders o WHERE status = %s AND {bulk_clause}', ('delivered',))
     delivered_count = cursor.fetchone()[0]
-    cursor.execute('SELECT COUNT(*) FROM orders WHERE status = %s', ('cancelled',))
+    cursor.execute(f'SELECT COUNT(*) FROM orders o WHERE status = %s AND {bulk_clause}', ('cancelled',))
     cancelled_count = cursor.fetchone()[0]
-    
+
     conn.close()
-    
+
     orders = {}
     for row in rows:
         order_id = row[0]
@@ -148,13 +155,16 @@ def all_orders():
                 'delivery_date': row[5],
                 'revenue': row[6],
                 'profit': row[7],
+                'delivery_required': row[8],
+                'bulk_discount_pct': row[9],
                 'items': []
             }
-        orders[order_id]['items'].append((row[8], row[9]))
-    
+        orders[order_id]['items'].append((row[10], row[11]))
+
     return render_template('all_orders.html',
         orders=orders,
         status_filter=status_filter,
+        order_type=order_type,
         pending_count=pending_count,
         delivered_count=delivered_count,
         cancelled_count=cancelled_count,
@@ -164,12 +174,19 @@ def all_orders():
 
 @app.route('/orders/<int:order_id>/deliver')
 def deliver_order(order_id):
-    log_order_delivered(order_id)
+    delivery_fee = float(request.args.get('fee', 0))
+    log_order_delivered(order_id, delivery_fee)
+    next_page = request.args.get('next', 'orders_page')
+    if next_page == 'all_orders':
+        return redirect(url_for('all_orders', order_type=request.args.get('order_type', 'regular')))
     return redirect(url_for('orders_page'))
 
 @app.route('/orders/<int:order_id>/cancel')
 def cancel_order_route(order_id):
     cancel_order(order_id)
+    next_page = request.args.get('next', 'orders_page')
+    if next_page == 'all_orders':
+        return redirect(url_for('all_orders', order_type=request.args.get('order_type', 'regular')))
     return redirect(url_for('orders_page'))
 
 @app.route('/orders/new', methods=['GET', 'POST'])
@@ -180,8 +197,9 @@ def new_order():
         address = request.form['address']
         delivery_date = request.form['delivery_date']
         notes = request.form.get('notes', '')
-        combo_id = request.form.get('combo_id') or None
-        
+        delivery_required = bool(request.form.get('delivery_required'))
+        delivery_zone_id = request.form.get('delivery_zone_id') or None
+
         items = {}
         recipes = get_all_recipes()
         for recipe in recipes:
@@ -189,17 +207,19 @@ def new_order():
             qty = request.form.get(f'qty_{flavour}', 0)
             if qty and int(qty) > 0:
                 items[flavour] = int(qty)
-        
+
         if not items:
             return redirect(url_for('new_order'))
-        
+
         warnings = check_stock_for_order(items)
         if warnings:
             recipes = get_all_recipes()
             combos = get_all_combos()
+            zones = get_all_delivery_zones()
             return render_template('new_order.html',
                 recipes=recipes,
                 combos=combos,
+                zones=zones,
                 warnings=warnings
             )
         # check packaging
@@ -217,26 +237,89 @@ def new_order():
             if stock < boxes_needed:
                 recipes = get_all_recipes()
                 combos = get_all_combos()
+                zones = get_all_delivery_zones()
                 return render_template('new_order.html',
                     recipes=recipes,
                     combos=combos,
+                    zones=zones,
                     warnings=warnings,
                     packaging_warning=f'Need {boxes_needed} boxes but only {stock} in stock!'
                 )
-        
+
         customer_id = add_customer(name, phone, address)
-        order_id = create_order(customer_id, delivery_date, address, items, combo_id, notes)
-        
+        order_id = create_order(customer_id, delivery_date, address, items, notes, delivery_required, delivery_zone_id=delivery_zone_id)
+
         return redirect(url_for('orders_page'))
-    
+
     recipes = get_all_recipes()
     combos = get_all_combos()
+    zones = get_all_delivery_zones()
     return render_template('new_order.html',
         recipes=recipes,
+        zones=zones,
         combos=combos,
         warnings=[],
         packaging_warning=None
     )
+
+@app.route('/orders/bulk', methods=['GET', 'POST'])
+def bulk_order():
+    if request.method == 'POST':
+        name = request.form['name'].strip().title()
+        phone = request.form['phone']
+        address = request.form['address']
+        delivery_date = request.form['delivery_date']
+        notes = request.form.get('notes', '')
+        delivery_required = bool(request.form.get('delivery_required'))
+        bulk_discount_pct = float(request.form.get('bulk_discount_pct') or 0)
+        delivery_zone_id = request.form.get('delivery_zone_id') or None
+
+        items = {}
+        recipes = get_all_recipes()
+        for recipe in recipes:
+            flavour = recipe[1]
+            qty = request.form.get(f'qty_{flavour}', 0)
+            if qty and int(qty) > 0:
+                items[flavour] = int(qty)
+
+        if not items:
+            return redirect(url_for('bulk_order'))
+
+        warnings = check_stock_for_order(items)
+        if warnings:
+            recipes = get_all_recipes()
+            zones = get_all_delivery_zones()
+            return render_template('bulk_order.html', recipes=recipes, zones=zones, warnings=warnings)
+
+        from database import get_connection
+        conn = get_connection()
+        cursor = conn.cursor()
+        total_cookies = sum(items.values())
+        cursor.execute('SELECT capacity, stock FROM packaging WHERE box_name = %s', ('standard_box',))
+        box = cursor.fetchone()
+        conn.close()
+
+        if box:
+            capacity, stock = box
+            boxes_needed = math.ceil(total_cookies / capacity)
+            if stock < boxes_needed:
+                recipes = get_all_recipes()
+                zones = get_all_delivery_zones()
+                return render_template('bulk_order.html',
+                    recipes=recipes,
+                    zones=zones,
+                    warnings=warnings,
+                    packaging_warning=f'Need {boxes_needed} boxes but only {stock} in stock!'
+                )
+
+        customer_id = add_customer(name, phone, address)
+        order_id = create_order(customer_id, delivery_date, address, items, notes, delivery_required, bulk_discount_pct, delivery_zone_id)
+
+        return redirect(url_for('orders_page'))
+
+    recipes = get_all_recipes()
+    zones = get_all_delivery_zones()
+    return render_template('bulk_order.html', recipes=recipes, zones=zones, warnings=[], packaging_warning=None)
 
 @app.route('/stock')
 def stock_page():
@@ -421,22 +504,37 @@ def finance_custom():
     if request.method == 'POST':
         start = request.form['start_date']
         end = request.form['end_date']
-        
-        report = get_weekly_report(start, end)
-        
+
+        report = get_custom_report(start, end)
+
         from datetime import datetime
         start_formatted = datetime.strptime(start, '%Y-%m-%d').strftime('%d %b %Y')
         end_formatted = datetime.strptime(end, '%Y-%m-%d').strftime('%d %b %Y')
-        
+
+        from database import get_connection
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT o.id, c.name, o.delivery_date, o.status,
+                   o.revenue, o.profit, o.margin
+            FROM orders o
+            JOIN customers c ON o.customer_id = c.id
+            WHERE o.delivery_date BETWEEN %s AND %s
+            ORDER BY o.delivery_date ASC
+        ''', (start, end))
+        all_orders = cursor.fetchall()
+        conn.close()
+
         return render_template('finance_custom.html',
             report=report,
+            all_orders=all_orders,
             start=start,
             end=end,
             start_formatted=start_formatted,
             end_formatted=end_formatted,
             searched=True
         )
-    
+
     return render_template('finance_custom.html', searched=False)
 
 @app.route('/recipes')
@@ -635,6 +733,7 @@ def add_packaging_stock(box_name):
 def settings_page():
     pricing = get_all_pricing()
     combos = get_all_combos()
+    delivery_zones = get_all_delivery_zones()
     from database import get_connection
     conn = get_connection()
     cursor = conn.cursor()
@@ -645,14 +744,46 @@ def settings_page():
     cursor.execute('SELECT box_name, capacity, cost_per_box, stock, low_stock_threshold FROM packaging')
     packaging = cursor.fetchall()
     conn.close()
-    
+
     return render_template('settings.html',
         pricing=pricing,
         combos=combos,
+        delivery_zones=delivery_zones,
         cookie_thresholds=cookie_thresholds,
         ingredient_thresholds=ingredient_thresholds,
         packaging=packaging
     )
+
+@app.route('/settings/zones/<int:zone_id>/deactivate')
+def deactivate_zone_route(zone_id):
+    deactivate_delivery_zone(zone_id)
+    return redirect(url_for('settings_page'))
+
+@app.route('/settings/zones/<int:zone_id>/activate')
+def activate_zone_route(zone_id):
+    activate_delivery_zone(zone_id)
+    return redirect(url_for('settings_page'))
+
+@app.route('/settings/zones/<int:zone_id>/edit', methods=['GET', 'POST'])
+def edit_zone_cost(zone_id):
+    if request.method == 'POST':
+        cost = float(request.form['typical_porter_cost'])
+        update_delivery_zone(zone_id, typical_porter_cost=cost)
+        return redirect(url_for('settings_page'))
+    return render_template('edit_simple.html',
+        title='Edit Typical Porter Cost',
+        field_label='Typical Porter Cost (₹)',
+        field_name='typical_porter_cost',
+        action=f'/settings/zones/{zone_id}/edit')
+
+@app.route('/settings/zones/new', methods=['GET', 'POST'])
+def new_zone():
+    if request.method == 'POST':
+        zone_name = request.form['zone_name'].strip()
+        typical_porter_cost = float(request.form.get('typical_porter_cost', 0) or 0)
+        add_delivery_zone(zone_name, typical_porter_cost)
+        return redirect(url_for('settings_page'))
+    return render_template('new_zone.html')
 
 @app.route('/settings/pricing/<flavour>/edit', methods=['GET', 'POST'])
 def edit_pricing(flavour):
@@ -921,14 +1052,14 @@ def delete_combo_route(combo_id):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT COUNT(*) FROM orders 
-        WHERE combo_id = %s AND status = 'pending'
+        SELECT COUNT(*) FROM order_combos oc
+        JOIN orders o ON oc.order_id = o.id
+        WHERE oc.combo_id = %s AND o.status = 'pending'
     ''', (combo_id,))
     pending = cursor.fetchone()[0]
     if pending > 0:
         conn.close()
         return redirect(url_for('settings_page'))
-    cursor.execute('UPDATE orders SET combo_id = NULL WHERE combo_id = %s', (combo_id,))
     cursor.execute('DELETE FROM combos WHERE id = %s', (combo_id,))
     conn.commit()
     conn.close()
@@ -974,6 +1105,277 @@ def edit_ingredient_price(name):
     
     return render_template('edit_ingredient_price.html', name=name, current=current)
 
+@app.route('/api/stock', methods=['GET'])
+def api_stock():
+    from database import get_connection
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT flavour, quantity - reserved as available FROM cookie_stock')
+    stock = {row[0]: row[1] for row in cursor.fetchall()}
+    conn.close()
+    return jsonify(stock)
+
+@app.route('/api/combos', methods=['GET'])
+def api_combos():
+    combos = get_all_combos()
+    result = []
+    for combo in combos:
+        if combo[5]:  # is_active
+            result.append({
+                'id': combo[0],
+                'name': combo[1],
+                'buy_quantity': combo[2],
+                'free_quantity': combo[3],
+                'discount_percentage': combo[4]
+            })
+    return jsonify(result)
+
+@app.route('/api/packaging', methods=['GET'])
+def api_packaging():
+    from database import get_connection
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT box_name, capacity, stock FROM packaging')
+    packaging = [{'box_name': r[0], 'capacity': r[1], 'stock': r[2]} for r in cursor.fetchall()]
+    conn.close()
+    return jsonify(packaging)
+
+@app.route('/api/orders', methods=['POST'])
+def api_create_order():
+    data = request.get_json()
+    
+    name = data['name']
+    phone = data['phone']
+    address = data['address']
+    delivery_date = data['delivery_date']
+    items = data['items']
+    notes = data.get('notes', '')
+
+    warnings = check_stock_for_order(items)
+    if warnings:
+        return jsonify({'success': False, 'warnings': warnings}), 400
+
+    customer_id = add_customer(name, phone, address)
+    order_id = create_order(customer_id, delivery_date, address, items, notes)
+    
+    return jsonify({'success': True, 'order_id': order_id})
+
+@app.route('/orders/dm', methods=['GET', 'POST'])
+def dm_order():
+    from dm_agent import extract_order_from_dm
+    from database import get_connection
+    
+    extracted = None
+    error = None
+    
+    if request.method == 'POST' and 'dm_text' in request.form:
+        dm_text = request.form['dm_text']
+        
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT flavour, quantity - reserved as available FROM cookie_stock')
+        stock = {row[0]: row[1] for row in cursor.fetchall()}
+        conn.close()
+        
+        combos = get_all_combos()
+        active_combos = [{'id': c[0], 'name': c[1], 'buy': c[2], 'free': c[3], 'discount': c[4]} for c in combos if c[5]]
+        
+        try:
+            extracted = extract_order_from_dm(dm_text, stock, active_combos)
+        except Exception as e:
+            error = str(e)
+    
+    elif request.method == 'POST' and 'confirm' in request.form:
+        name = request.form['name']
+        phone = request.form['phone']
+        address = request.form['address']
+        delivery_date = request.form['delivery_date']
+        notes = request.form.get('notes', '')
+        delivery_required = bool(request.form.get('delivery_required'))
+        delivery_zone_id = request.form.get('delivery_zone_id') or None
+
+        items = {}
+        for key, value in request.form.items():
+            if key.startswith('item_') and value and int(value) > 0:
+                flavour = key.replace('item_', '')
+                items[flavour] = int(value)
+
+        warnings = check_stock_for_order(items)
+
+        if warnings:
+            extracted = {
+                'name': name,
+                'phone': phone,
+                'address': address,
+                'delivery_date': delivery_date,
+                'items': items,
+                'notes': notes,
+                'delivery_required': delivery_required,
+                'missing': [],
+                'address_validated': None
+            }
+            return render_template('dm_order.html',
+                extracted=extracted,
+                error=None,
+                today=date.today(),
+                stock_warnings=warnings,
+                combos=get_all_combos(),
+                zones=get_all_delivery_zones()
+            )
+
+        if items:
+            customer_id = add_customer(name, phone, address)
+            order_id = create_order(customer_id, delivery_date, address, items, notes, delivery_required, delivery_zone_id=delivery_zone_id)
+            return redirect(url_for('all_orders'))
+
+    return render_template('dm_order.html',
+        extracted=extracted,
+        error=error,
+        today=date.today(),
+        stock_warnings=None,
+        combos=get_all_combos(),
+        zones=get_all_delivery_zones()
+    )
+
+@app.route('/orders/<int:order_id>/edit', methods=['GET', 'POST'])
+def edit_order(order_id):
+    from database import get_connection
+    
+    if request.method == 'POST':
+        name = request.form['name'].strip().title()
+        phone = request.form['phone']
+        delivery_date = request.form['delivery_date']
+        address = request.form['address']
+        notes = request.form.get('notes', '')
+        delivery_required = bool(request.form.get('delivery_required'))
+        is_bulk = bool(request.form.get('is_bulk'))
+        bulk_discount_pct = float(request.form.get('bulk_discount_pct') or 0) if is_bulk else None
+        delivery_zone_id = request.form.get('delivery_zone_id') or None
+        # update customer details
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE customers SET name = %s, phone = %s
+            WHERE id = (SELECT customer_id FROM orders WHERE id = %s)
+        ''', (name, phone, order_id))
+        conn.commit()
+        conn.close()
+        items = {}
+        for key, value in request.form.items():
+            if key.startswith('item_') and value and int(value) > 0:
+                flavour = key.replace('item_', '')
+                items[flavour] = int(value)
+
+        total_cookies = sum(items.values())
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT capacity, stock FROM packaging')
+        boxes = cursor.fetchall()
+        total_capacity = sum(cap * stock for cap, stock in boxes)
+        conn.close()
+
+        if total_capacity < total_cookies:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT o.id, c.name, c.phone, o.address, o.delivery_date, o.notes,
+                       o.delivery_required, o.bulk_discount_pct, o.delivery_zone_id
+                FROM orders o JOIN customers c ON o.customer_id = c.id
+                WHERE o.id = %s
+            ''', (order_id,))
+            order = cursor.fetchone()
+            conn.close()
+            return render_template('edit_order.html',
+                order=order,
+                items=items,
+                zones=get_all_delivery_zones(),
+                warnings=[],
+                packaging_warning=f'Need to pack {total_cookies} cookies but total box capacity available is {total_capacity}')
+
+        update_order(order_id, delivery_date=delivery_date, address=address, notes=notes,
+                     delivery_required=delivery_required, bulk_discount_pct=bulk_discount_pct,
+                     delivery_zone_id=delivery_zone_id)
+
+        result = update_order_items(order_id, items)
+
+        if isinstance(result, dict) and not result.get('success'):
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT o.id, c.name, c.phone, o.address, o.delivery_date, o.notes,
+                       o.delivery_required, o.bulk_discount_pct, o.delivery_zone_id
+                FROM orders o JOIN customers c ON o.customer_id = c.id
+                WHERE o.id = %s
+            ''', (order_id,))
+            order = cursor.fetchone()
+            conn.close()
+            return render_template('edit_order.html',
+                order=order,
+                items=items,
+                zones=get_all_delivery_zones(),
+                warnings=result['warnings'])
+
+        return redirect(url_for('all_orders'))
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT o.id, c.name, c.phone, o.address, o.delivery_date, o.notes,
+               o.delivery_required, o.bulk_discount_pct, o.delivery_zone_id
+        FROM orders o JOIN customers c ON o.customer_id = c.id
+        WHERE o.id = %s
+    ''', (order_id,))
+    order = cursor.fetchone()
+
+    cursor.execute('SELECT flavour, quantity FROM order_items WHERE order_id = %s', (order_id,))
+    items = {row[0]: row[1] for row in cursor.fetchall()}
+    conn.close()
+
+    return render_template('edit_order.html', order=order, items=items, zones=get_all_delivery_zones(), warnings=[])
+
+@app.route('/agent/orders', methods=['GET', 'POST'])
+def order_agent_page():
+    from order_agent import run_agent
+    from flask import session
+    
+    if 'agent_chat' not in session:
+        session['agent_chat'] = []
+    
+    if request.method == 'POST':
+        user_message = request.form['message'].strip()
+        
+        if user_message:
+            chat_history = session['agent_chat']
+            
+            try:
+                result = run_agent(user_message, chat_history)
+            except Exception as e:
+                result = {'type': 'message', 'content': f'Error: {str(e)}'}
+            
+            # save to history
+            chat_history.append({'role': 'user', 'content': user_message})
+            
+            if result['type'] == 'navigate':
+                chat_history.append({'role': 'assistant', 'content': f"Taking you to {result['url']}"})
+                session['agent_chat'] = chat_history
+                session.modified = True
+                return redirect(result['url'])
+            else:
+                chat_history.append({'role': 'assistant', 'content': result['content']})
+                session['agent_chat'] = chat_history
+                session.modified = True
+        
+        return redirect(url_for('order_agent_page'))
+    
+    return render_template('agent_orders.html', chat=session['agent_chat'])
+
+@app.route('/agent/orders/clear')
+def clear_agent_chat():
+    from flask import session
+    session['agent_chat'] = []
+    return redirect(url_for('order_agent_page'))
+
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=8080)
+    port = int(os.environ.get('SLAPP_PORT', 8080))
+    app.run(debug=True, host='127.0.0.1', port=port)
 

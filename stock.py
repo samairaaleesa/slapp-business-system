@@ -35,17 +35,17 @@ def log_dough_made(flavour, portions):
     conn.close()
     print(f"Logged {portions} portions of {flavour}. Ingredients deducted.")
 
-def log_order_delivered(order_id):
+def log_order_delivered(order_id, delivery_cost_actual=0):
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     cursor.execute('''
         SELECT flavour, quantity FROM order_items
         WHERE order_id = %s
     ''', (order_id,))
-    
+
     items = cursor.fetchall()
-    
+
     for flavour, quantity in items:
         cursor.execute('''
             UPDATE cookie_stock
@@ -53,24 +53,32 @@ def log_order_delivered(order_id):
                 reserved = reserved - %s
             WHERE flavour = %s
         ''', (quantity, quantity, flavour))
-    
+
+    # revenue is gross (already includes delivery_fee_charged from creation) and is NOT
+    # touched here. delivery_cost_actual (real Porter cost) only reduces profit/margin —
+    # this keeps revenue, delivery fee collected, and delivery cost paid as three
+    # independent, summable line items for reporting (no double counting).
+    cursor.execute('SELECT revenue, profit FROM orders WHERE id = %s', (order_id,))
+    revenue, profit = cursor.fetchone()
+    revenue = float(revenue or 0)
+    profit = float(profit or 0) - delivery_cost_actual
+    margin = round(profit / revenue * 100, 1) if revenue > 0 else 0
+
     cursor.execute('''
-        UPDATE orders SET status = 'delivered'
+        UPDATE orders SET status = 'delivered', delivery_cost_actual = %s,
+            profit = %s, margin = %s
         WHERE id = %s
-    ''', (order_id,))
-    
+    ''', (delivery_cost_actual, profit, margin, order_id))
+
     deduct_packaging_for_order(order_id)
-    
+
     conn.commit()
     conn.close()
     from cashflow import add_transaction
-    conn2 = get_connection()
-    cursor2 = conn2.cursor()
-    cursor2.execute('SELECT revenue FROM orders WHERE id = %s', (order_id,))
-    revenue = cursor2.fetchone()[0]
-    conn2.close()
     if revenue:
         add_transaction('income', 'order', revenue, f'Order #{order_id} delivered')
+    if delivery_cost_actual:
+        add_transaction('expense', 'delivery', delivery_cost_actual, f'Porter cost for order #{order_id}')
     print(f"Order #{order_id} marked as delivered. Stock updated.")
 
 def check_low_stock():
@@ -168,31 +176,41 @@ def deduct_packaging_for_order(order_id):
     conn = get_connection()
     cursor = conn.cursor()
     
-    cursor.execute('''
-        SELECT SUM(quantity) FROM order_items
-        WHERE order_id = %s
-    ''', (order_id,))
-    
+    cursor.execute('SELECT SUM(quantity) FROM order_items WHERE order_id = %s', (order_id,))
     total_cookies = cursor.fetchone()[0]
     
-    cursor.execute('''
-        SELECT id, capacity FROM packaging
-        WHERE box_name = 'standard_box'
-    ''')
+    cursor.execute('SELECT box_name, capacity, id FROM packaging WHERE stock > 0 ORDER BY capacity DESC')
+    boxes = cursor.fetchall()
     
-    box = cursor.fetchone()
-    if box:
-        box_id, capacity = box
-        boxes_needed = math.ceil(total_cookies / capacity)
-        
-        cursor.execute('''
-            UPDATE packaging
-            SET stock = stock - %s
-            WHERE id = %s
-        ''', (boxes_needed, box_id))
+    # greedy algorithm — use largest boxes first
+    allocation = {}
+    remaining = total_cookies
+    
+    for box_name, capacity, box_id in boxes:
+        if remaining <= 0:
+            break
+        count = remaining // capacity
+        if count > 0:
+            allocation[box_id] = (box_name, count, capacity)
+            remaining -= count * capacity
+    
+    # if cookies still remaining, use smallest box for the rest
+    if remaining > 0:
+        smallest = boxes[-1]
+        box_id = smallest[2]
+        if box_id in allocation:
+            allocation[box_id] = (allocation[box_id][0], allocation[box_id][1] + 1, allocation[box_id][2])
+        else:
+            allocation[box_id] = (smallest[0], 1, smallest[1])
+    
+    # deduct stock
+    for box_id, (box_name, count, capacity) in allocation.items():
+        cursor.execute('UPDATE packaging SET stock = stock - %s WHERE id = %s', (count, box_id))
     
     conn.commit()
     conn.close()
+    
+    return allocation
 
 def set_ingredient_stock(ingredient_name, quantity):
     conn = get_connection()

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — DM Order</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 900px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 32px; }
+        .section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        textarea { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 14px; resize: vertical; min-height: 150px; }
+        textarea:focus { outline: none; border-color: #ff2d78; }
+        input, select { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 12px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #ff2d78; }
+        .btn { padding: 12px 24px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-green { background: #39ff14; color: #0a0a0a; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .missing-badge { background: #ff2d7820; border: 1px solid #ff2d78; color: #ff2d78; padding: 4px 12px; border-radius: 20px; font-size: 11px; display: inline-block; margin: 4px; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 12px; }
+        .cal-header { text-align: center; font-size: 10px; color: #888; letter-spacing: 2px; text-transform: uppercase; padding: 8px 0; }
+        .cal-day { text-align: center; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 13px; border: 1px solid transparent; }
+        .cal-day:hover { border-color: #ff2d78; color: #ff2d78; }
+        .cal-day.selected { background: #ff2d78; color: #fff; }
+        .cal-day.today { border-color: #ffe600; color: #ffe600; }
+        .cal-day.empty { cursor: default; }
+        .cal-month-title { font-size: 14px; font-weight: 900; color: #ffe600; margin-bottom: 12px; }
+        .flavour-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; }
+        .flavour-row:last-child { border-bottom: none; }
+        .qty-input { width: 80px; text-align: center; }
+        .error-box { background: #ff2d2d20; border: 1px solid #ff2d2d; border-radius: 8px; padding: 16px; margin-bottom: 20px; color: #ff2d2d; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/agent/orders">Order Agent</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+<div class="container">
+    <p class="page-title">DM Order Intake</p>
+
+    {% if error %}
+    <div class="error-box">Error extracting order: {{ error }}</div>
+    {% endif %}
+
+    <!-- Step 1: Paste DM -->
+    {% if not extracted %}
+    <div class="section">
+        <p class="section-title">Paste Customer DM</p>
+        <form method="POST" action="/orders/dm">
+            <div class="form-group">
+                <textarea name="dm_text" placeholder="Paste the Instagram DM here..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-pink">Extract Order →</button>
+        </form>
+    </div>
+
+    {% else %}
+    <!-- Step 2: Review and confirm -->
+    <form method="POST" action="/orders/dm">
+        <input type="hidden" name="confirm" value="1">
+
+        <!-- Missing fields warning -->
+        {% if extracted.missing %}
+        <div style="margin-bottom:20px;">
+            <span style="font-size:11px; color:#888; letter-spacing:2px; text-transform:uppercase;">Missing: </span>
+            {% for m in extracted.missing %}
+            <span class="missing-badge">{{ m }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Customer details -->
+        <div class="section">
+            <p class="section-title">Customer Details</p>
+            <div class="two-col">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" name="name" value="{{ extracted.name or '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" name="phone" value="{{ extracted.phone or '' }}" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Address </label>
+            <input type="text" name="address" value="{{ extracted.address or '' }}" required>
+        </div>
+            <div class="form-group">
+                <label style="display:flex; align-items:center; gap:8px; text-transform:none;">
+                    <input type="checkbox" name="delivery_required" value="1" style="width:auto;" {% if extracted.delivery_required %}checked{% endif %}>
+                    Requires delivery (adds ₹50 if order is under ₹500)
+                </label>
+            </div>
+            <div class="form-group">
+                <label>Delivery Zone (if delivery required)</label>
+                <select name="delivery_zone_id" style="background:#0a0a0a; border:1px solid #333; color:#f0f0f0; padding:10px; border-radius:4px; width:100%; font-family:'Arial Black',Arial,sans-serif;">
+                    <option value="">— none / pickup —</option>
+                    {% for zone in zones %}
+                    {% if zone[3] %}
+                    <option value="{{ zone[0] }}">{{ zone[1] }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <!-- Combo -->
+        <div class="section">
+            <p class="section-title">Combo</p>
+            <p style="font-size:12px; color:#888;">Best combo mix is applied automatically based on quantity — no need to pick one.</p>
+        </div>
+        <!-- Delivery date with calendar -->
+        <div class="section">
+            <p class="section-title">Delivery Date</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+                <div>
+                    <input type="hidden" name="delivery_date" id="delivery_date" value="{{ extracted.delivery_date or '' }}">
+                    <p style="font-size:14px; margin-bottom:16px;">
+                        Selected: <span id="date_display" style="color:#ffe600; font-weight:900;">{{ extracted.delivery_date or 'None' }}</span>
+                    </p>
+                    {% if extracted.delivery_date %}
+                    <p style="font-size:12px; color:#888;">Agent extracted this — click calendar to change</p>
+                    {% else %}
+                    <p style="font-size:12px; color:#ff2d78;">⚠️ No date in DM — click a date</p>
+                    {% endif %}
+                </div>
+                <div id="calendar"></div>
+             </div>
+        </div>
+
+        <script>
+        const today = new Date('{{ today }}');
+        const selected = '{{ extracted.delivery_date or "" }}';
+
+        function renderCalendar(year, month) {
+            const months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const adjustedFirst = (firstDay + 6) % 7; // Monday start
+    
+            let html = `<div style="margin-bottom:24px;">`;
+            html += `<p style="font-size:14px; font-weight:900; color:#ffe600; margin-bottom:12px;">${months[month]} ${year}</p>`;
+            html += `<div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px;">`;
+    
+            ['M','T','W','T','F','S','S'].forEach(d => {
+                html += `<div style="text-align:center; font-size:10px; color:#888; padding:4px;">${d}</div>`;
+            });
+    
+            for (let i = 0; i < adjustedFirst; i++) {
+                html += `<div></div>`;
+            }
+    
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const isToday = dateStr === today.toISOString().split('T')[0];
+                const isSelected = dateStr === selected || dateStr === document.getElementById('delivery_date').value;
+                const isPast = new Date(dateStr) < new Date(today.toISOString().split('T')[0]);
+        
+                let style = "text-align:center; padding:8px 4px; border-radius:4px; cursor:pointer; font-size:13px; border:1px solid transparent;";
+                if (isSelected) style += "background:#ff2d78; color:#fff;";
+                else if (isToday) style += "border-color:#ffe600; color:#ffe600;";
+                else if (isPast) style += "color:#333; cursor:default;";
+                else style += "color:#f0f0f0;";
+        
+                const clickable = !isPast ? `onclick="selectDate('${dateStr}', this)"` : '';
+               html += `<div style="${style}" ${clickable}>${day}</div>`;
+            }
+    
+            html += `</div></div>`;
+            return html;
+        }
+
+        function selectDate(dateStr, el) {
+            document.getElementById('delivery_date').value = dateStr;
+            document.getElementById('date_display').textContent = dateStr;
+            document.getElementById('calendar').innerHTML = 
+                renderCalendar(today.getFullYear(), today.getMonth()) + 
+                renderCalendar(today.getFullYear(), today.getMonth() + 1);
+        }
+
+        document.getElementById('calendar').innerHTML = 
+            renderCalendar(today.getFullYear(), today.getMonth()) + 
+            renderCalendar(today.getFullYear(), today.getMonth() + 1);
+        </script>
+
+        <!-- Items -->
+        <div class="section">
+            <p class="section-title">Cookie Order</p>
+            {% set flavours = [
+                ('the_classic_slapp', 'Classic'),
+                ('the_brownie_slapp', 'Brownie'),
+                ('comfort_slapp', 'Comfort'),
+                ('red_velvet_slapp', 'Velvety')
+            ] %}
+            {% for key, label in flavours %}
+            <div class="flavour-row">
+                <span style="font-size:15px; font-weight:700;">{{ label }}</span>
+                <input type="number" name="item_{{ key }}" class="qty-input"
+                        value="{{ extracted['items'].get(key, 0) }}" min="0">
+            </div>
+            {% endfor %}
+        </div>
+        {% if stock_warnings %}
+        <div style="background:#ff2d2d20; border:1px solid #ff2d2d; border-radius:8px; padding:16px; margin-bottom:16px;">
+            <p style="color:#ff2d2d; font-size:11px; letter-spacing:3px; text-transform:uppercase; margin-bottom:8px;">⚠️ Stock Issues</p>
+            {% for w in stock_warnings %}
+            <p style="color:#ff2d2d; font-size:14px;">{{ w['flavour'].replace('_slapp','').replace('_',' ').title() }}: need {{ w['needed'] }}, only {{ w['available'] }} available</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-green" style="width:100%; padding:16px;">✓ Confirm Order</button>
+        <a href="/orders/dm" class="btn btn-outline" style="width:100%; text-align:center; margin-top:8px; padding:16px; display:block;">← Start Over</a>
+    </form>
+    {% endif %}
+
+</div>
+
+<script>
+function selectDate(dateStr, el) {
+    document.getElementById('delivery_date').value = dateStr;
+    document.getElementById('date_display').textContent = dateStr;
+    document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+}
+</script>
+
+</body>
+</html>

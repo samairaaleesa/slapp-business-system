@@ -4,38 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SLAPP — Weekly Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
-        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
-        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .navbar { background: #111; border-bottom: 3px solid #ff1b7f; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff1b7f; letter-spacing: 4px; }
         .nav-links { display: flex; gap: 24px; list-style: none; }
         .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
-        .nav-links a:hover { color: #ff2d78; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 32px; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .nav-links a:hover { color: #ff1b7f; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 32px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
         .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; }
         .week-nav { display: flex; gap: 12px; align-items: center; }
         .btn { padding: 10px 20px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
-        .btn-yellow { background: #ffe600; color: #0a0a0a; }
+        .btn-yellow { background: #ffea00; color: #0a0a0a; }
         .week-label { font-size: 14px; color: #f0f0f0; font-weight: 700; }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-        .stat-card { background: #111; border-radius: 8px; padding: 20px; border-top: 3px solid #ff2d78; }
+        .stat-card { background: #111; border-radius: 8px; padding: 20px; border-top: 3px solid #ff1b7f; }
         .stat-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
-        .stat-value { font-size: 28px; font-weight: 900; color: #ffe600; }
+        .stat-value { font-size: 26px; font-weight: 900; color: #ffea00; }
         .stat-sub { font-size: 12px; color: #555; margin-top: 4px; }
         .section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
-        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff1b7f; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
+        .chart-wrap { position: relative; height: 280px; }
+        .table-row { display: grid; grid-template-columns: 1.5fr repeat(4, 1fr); gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; font-size: 13px; }
+        .table-row.header { color: #888; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+        .table-row:last-child { border-bottom: none; }
         .order-row { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; font-size: 13px; }
         .order-row:last-child { border-bottom: none; }
         .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
-        .status-pending { background: #ff2d7820; color: #ff2d78; border: 1px solid #ff2d78; }
-        .status-delivered { background: #39ff1420; color: #39ff14; border: 1px solid #39ff14; }
+        .status-pending { background: #ff1b7f20; color: #ff1b7f; border: 1px solid #ff1b7f; }
+        .status-delivered { background: #5dff2d20; color: #5dff2d; border: 1px solid #5dff2d; }
         .status-cancelled { background: #33333320; color: #555; border: 1px solid #333; }
-        .flavour-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; }
-        .flavour-row:last-child { border-bottom: none; }
         .empty { color: #555; text-align: center; padding: 20px; font-size: 14px; }
+        .recon-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 14px; }
+        .recon-row:last-child { border-bottom: none; }
+        .ok-badge { color: #5dff2d; }
+        .warn-badge { color: #ff6b00; }
     </style>
 </head>
 <body>
@@ -50,6 +57,7 @@
         <li><a href="/finance">Finance</a></li>
         <li><a href="/recipes">Recipes</a></li>
         <li><a href="/popups">Popups</a></li>
+        <li><a href="/agent/orders">Order Agent</a></li>
         <li><a href="/settings">Settings</a></li>
     </ul>
 </nav>
@@ -69,45 +77,136 @@
     <!-- Stats -->
     <div class="stats-grid">
         <div class="stat-card">
-            <p class="stat-label">Total Orders</p>
-            <p class="stat-value">{{ weekly['total_orders'] or 0 }}</p>
-            <p class="stat-sub">{{ weekly['total_cookies'] or 0 }} cookies</p>
-        </div>
-        <div class="stat-card">
             <p class="stat-label">Revenue</p>
             <p class="stat-value">₹{{ weekly['revenue'] or 0 }}</p>
-            <p class="stat-sub">Delivered orders only</p>
+            <p class="stat-sub">{{ weekly['total_orders'] or 0 }} orders · {{ weekly['total_cookies'] or 0 }} cookies</p>
+        </div>
+        <div class="stat-card" style="border-top-color:#1ee8e8;">
+            <p class="stat-label">Delivery Fee Collected</p>
+            <p class="stat-value" style="color:#1ee8e8;">₹{{ weekly['delivery_fee_charged'] or 0 }}</p>
+            <p class="stat-sub">Charged to customers</p>
+        </div>
+        <div class="stat-card" style="border-top-color:#ff6b00;">
+            <p class="stat-label">Delivery Cost Paid</p>
+            <p class="stat-value" style="color:#ff6b00;">₹{{ weekly['delivery_cost_actual'] or 0 }}</p>
+            <p class="stat-sub">Real Porter cost</p>
+        </div>
+        <div class="stat-card" style="border-top-color:#5dff2d;">
+            <p class="stat-label">Net Profit</p>
+            <p class="stat-value" style="color:#5dff2d;">₹{{ weekly['profit'] or 0 }}</p>
+            <p class="stat-sub">{{ weekly['margin'] or 0 }}% margin</p>
+        </div>
+    </div>
+    <div class="stats-grid" style="grid-template-columns: repeat(4,1fr);">
+        <div class="stat-card">
+            <p class="stat-label">Ingredient Cost</p>
+            <p class="stat-value" style="font-size:20px;">₹{{ weekly['ingredient_cost'] or 0 }}</p>
         </div>
         <div class="stat-card">
-            <p class="stat-label">Profit</p>
-            <p class="stat-value" style="color: #39ff14;">₹{{ weekly['profit'] or 0 }}</p>
-            <p class="stat-sub">{{ weekly['margin'] or 0 }}% margin</p>
+            <p class="stat-label">Packaging Cost</p>
+            <p class="stat-value" style="font-size:20px;">₹{{ weekly['packaging_cost'] or 0 }}</p>
         </div>
         <div class="stat-card">
             <p class="stat-label">Best Seller</p>
             <p class="stat-value" style="font-size:18px;">
-                {% if weekly['best_seller'] %}
-                {{ weekly['best_seller'][0].replace('_slapp','').replace('_',' ').title() }}
-                {% else %}
-                —
-                {% endif %}
+                {% if weekly['best_seller'] %}{{ weekly['best_seller'][0].replace('_slapp','').replace('_',' ').title() }}{% else %}—{% endif %}
             </p>
-            <p class="stat-sub">{% if weekly['best_seller'] %}{{ weekly['best_seller'][1] }} cookies{% endif %}</p>
+            <p class="stat-sub">{% if weekly['best_seller'] %}{{ weekly['best_seller'][1]['cookies'] }} cookies{% endif %}</p>
         </div>
+        <div class="stat-card" style="border-top-color:#ff6b00;">
+            <p class="stat-label">Cancellations</p>
+            <p class="stat-value" style="font-size:20px; color:#ff6b00;">{{ weekly['cancelled_count'] or 0 }}</p>
+            <p class="stat-sub">{{ weekly['cancellation_rate'] or 0 }}% rate · ₹{{ weekly['cancelled_lost_revenue'] or 0 }} lost</p>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="section">
+        <p class="section-title">Revenue &amp; Profit Over Time</p>
+        <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
+    </div>
+    <div class="section">
+        <p class="section-title">Flavour Performance Over Time</p>
+        <div class="chart-wrap"><canvas id="flavourChart"></canvas></div>
     </div>
 
     <!-- Flavour breakdown -->
     {% if weekly['flavour_breakdown'] %}
     <div class="section">
         <p class="section-title">By Flavour</p>
-        {% for flavour, total in weekly['flavour_breakdown'] %}
-        <div class="flavour-row">
-            <span>{{ flavour.replace('_slapp','').replace('_',' ').title() }}</span>
-            <span style="color:#ffe600; font-weight:700;">{{ total }} cookies</span>
+        <div class="table-row header">
+            <span>Flavour</span><span>Revenue</span><span>Cost</span><span>Profit</span><span>Margin</span>
+        </div>
+        {% for flavour, s in weekly['flavour_breakdown'].items() %}
+        <div class="table-row">
+            <span>{{ flavour.replace('_slapp','').replace('_',' ').title() }} ({{ s['cookies'] }})</span>
+            <span style="color:#ffea00;">₹{{ s['revenue'] }}</span>
+            <span style="color:#ff6b00;">₹{{ (s['ingredient_cost'] + s['packaging_cost'] + s['delivery_cost']) | round(2) }}</span>
+            <span style="color:#5dff2d;">₹{{ s['profit'] }}</span>
+            <span>{{ s['margin'] }}%</span>
         </div>
         {% endfor %}
     </div>
     {% endif %}
+
+    <!-- Zone breakdown -->
+    {% if weekly['zone_breakdown'] %}
+    <div class="section">
+        <p class="section-title">By Delivery Zone</p>
+        <div class="table-row header">
+            <span>Zone</span><span>Orders</span><span>Revenue</span><span>Delivery Cost</span><span>Margin</span>
+        </div>
+        {% for zone, s in weekly['zone_breakdown'].items() %}
+        <div class="table-row">
+            <span>{{ zone }}</span>
+            <span>{{ s['orders'] }}</span>
+            <span style="color:#ffea00;">₹{{ s['revenue'] }}</span>
+            <span style="color:#ff6b00;">₹{{ s['delivery_cost_actual'] }}</span>
+            <span style="color:{% if s['margin'] < 30 %}#ff6b00{% else %}#5dff2d{% endif %};">{{ s['margin'] }}%</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Order size breakdown -->
+    {% if weekly['size_breakdown'] %}
+    <div class="section">
+        <p class="section-title">By Order Size / Type</p>
+        <div class="table-row header" style="grid-template-columns: 1.5fr repeat(3, 1fr);">
+            <span>Type</span><span>Orders</span><span>Revenue</span><span>Margin</span>
+        </div>
+        {% for category, s in weekly['size_breakdown'].items() %}
+        <div class="table-row" style="grid-template-columns: 1.5fr repeat(3, 1fr);">
+            <span>{{ category }}</span>
+            <span>{{ s['orders'] }} ({{ s['cookies'] }} cookies)</span>
+            <span style="color:#ffea00;">₹{{ s['revenue'] }}</span>
+            <span>{{ s['margin'] }}%</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Cash reconciliation -->
+    {% set recon = weekly['cash_reconciliation'] %}
+    <div class="section">
+        <p class="section-title">Cash Reconciliation <span style="color:#555; text-transform:none; letter-spacing:0; font-size:11px;">(cash basis — by transaction date, not delivery date)</span></p>
+        <div class="recon-row"><span>Starting Balance</span><span>₹{{ recon['starting_balance'] }}</span></div>
+        <div class="recon-row"><span>+ Income</span><span style="color:#5dff2d;">₹{{ recon['income'] }}</span></div>
+        <div class="recon-row"><span>− Expenses</span><span style="color:#ff6b00;">₹{{ recon['expenses'] }}</span></div>
+        <div class="recon-row"><span>= Ending Balance</span><span style="color:#ffea00; font-weight:900;">₹{{ recon['ending_balance'] }}</span></div>
+        <div class="recon-row">
+            <span>Ledger check</span>
+            <span class="{% if recon['reconciles'] %}ok-badge{% else %}warn-badge{% endif %}">
+                {% if recon['reconciles'] %}✓ Reconciles{% else %}⚠ Mismatch — check transactions{% endif %}
+            </span>
+        </div>
+        {% if recon['expense_by_category'] %}
+        <p style="font-size:11px; color:#888; letter-spacing:2px; text-transform:uppercase; margin-top:16px; margin-bottom:8px;">Expenses by category</p>
+        {% for cat, amt in recon['expense_by_category'] %}
+        <div class="recon-row"><span>{{ cat.title() }}</span><span style="color:#ff6b00;">₹{{ amt }}</span></div>
+        {% endfor %}
+        {% endif %}
+    </div>
 
     <!-- All orders this week -->
     <div class="section">
@@ -118,8 +217,8 @@
                 <span style="color:#555;">{{ order[2] }}</span>
                 <span style="font-weight:700;">{{ order[1] }}</span>
                 <span class="status-badge status-{{ order[3] }}">{{ order[3] }}</span>
-                <span style="color:#ffe600;">₹{{ order[4] or 0 }}</span>
-                <span style="color:#39ff14;">₹{{ order[5] or 0 }} profit</span>
+                <span style="color:#ffea00;">₹{{ order[4] or 0 }}</span>
+                <span style="color:#5dff2d;">₹{{ order[5] or 0 }} profit</span>
             </div>
             {% endfor %}
         {% else %}
@@ -128,6 +227,53 @@
     </div>
 
 </div>
+
+<script>
+const ts = {{ weekly['timeseries'] | tojson }};
+const brandColors = ['#ffea00', '#1ee8e8', '#ff1b7f', '#5dff2d', '#ff6b00'];
+
+new Chart(document.getElementById('revenueChart'), {
+    type: 'line',
+    data: {
+        labels: ts.dates,
+        datasets: [
+            { label: 'Revenue', data: ts.revenue, borderColor: '#ffea00', backgroundColor: '#ffea0022', tension: 0.3, fill: true },
+            { label: 'Profit', data: ts.profit, borderColor: '#5dff2d', backgroundColor: '#5dff2d22', tension: 0.3, fill: true }
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#f0f0f0' } } },
+        scales: {
+            x: { ticks: { color: '#888' }, grid: { color: '#222' } },
+            y: { ticks: { color: '#888' }, grid: { color: '#222' } }
+        }
+    }
+});
+
+const flavourEntries = Object.entries(ts.flavour_series);
+new Chart(document.getElementById('flavourChart'), {
+    type: 'line',
+    data: {
+        labels: ts.dates,
+        datasets: flavourEntries.map(([flavour, data], i) => ({
+            label: flavour.replace('_slapp','').replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()),
+            data: data,
+            borderColor: brandColors[i % brandColors.length],
+            backgroundColor: brandColors[i % brandColors.length] + '22',
+            tension: 0.3
+        }))
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#f0f0f0' } } },
+        scales: {
+            x: { ticks: { color: '#888' }, grid: { color: '#222' } },
+            y: { ticks: { color: '#888' }, grid: { color: '#222' } }
+        }
+    }
+});
+</script>
 
 </body>
 </html>

@@ -58,6 +58,7 @@
         <li><a href="/finance">Finance</a></li>
         <li><a href="/recipes">Recipes</a></li>
         <li><a href="/popups">Popups</a></li>
+        <li><a href="/agent/orders">Order Agent</a></li>
         <li><a href="/settings">Settings</a></li>
     </ul>
 </nav>
@@ -102,7 +103,17 @@
             </div>
             <div class="order-actions">
                 {% if details['status'] == 'pending' %}
-                <a href="/orders/{{ order_id }}/deliver" class="btn btn-green">Mark Delivered</a>
+                {% if details['delivery_required'] %}
+                <span id="deliver-btn-{{ order_id }}">
+                    <a href="#" onclick="showDeliverInput({{ order_id }}); return false;" class="btn btn-green">Mark Delivered</a>
+                </span>
+                <span id="deliver-form-{{ order_id }}" style="display:none; align-items:center; gap:6px;">
+                    <input type="number" id="fee-{{ order_id }}" value="50" style="width:60px; background:#0a0a0a; border:1px solid #333; color:#f0f0f0; padding:6px; border-radius:4px; font-size:12px;">
+                    <a href="#" onclick="confirmDeliver({{ order_id }}); return false;" class="btn btn-green">Confirm</a>
+                </span>
+                {% else %}
+                <a href="/orders/{{ order_id }}/deliver?next=all_orders" class="btn btn-green">Mark Delivered</a>
+                {% endif %}
                 <a href="/orders/{{ order_id }}/cancel" class="btn btn-red">Cancel</a>
                 {% endif %}
             </div>
@@ -116,6 +127,17 @@
     {% endif %}
 
 </div>
+
+<script>
+function showDeliverInput(orderId) {
+    document.getElementById(`deliver-btn-${orderId}`).style.display = 'none';
+    document.getElementById(`deliver-form-${orderId}`).style.display = 'inline-flex';
+}
+function confirmDeliver(orderId) {
+    const fee = document.getElementById(`fee-${orderId}`).value;
+    window.location.href = `/orders/${orderId}/deliver?fee=${encodeURIComponent(fee)}&next=all_orders`;
+}
+</script>
 
 </body>
 </html>

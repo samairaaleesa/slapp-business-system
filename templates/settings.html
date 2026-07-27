@@ -43,6 +43,7 @@
         <li><a href="/finance">Finance</a></li>
         <li><a href="/recipes">Recipes</a></li>
         <li><a href="/popups">Popups</a></li>
+        <li><a href="/agent/orders">Order Agent</a></li>
         <li><a href="/settings">Settings</a></li>
     </ul>
 </nav>
@@ -88,6 +89,32 @@
         {% endfor %}
         <div style="margin-top:16px;">
             <a href="/settings/combos/new" class="btn btn-pink">+ Add Combo</a>
+        </div>
+    </div>
+
+    <!-- Delivery Zones -->
+    <div class="section">
+        <p class="section-title">Delivery Zones</p>
+        {% for zone in delivery_zones %}
+        <div class="row">
+            <div>
+                <span class="row-name">{{ zone[1] }}</span>
+                <span class="combo-badge {% if not zone[3] %}inactive{% endif %}" style="margin-left:8px;">
+                    ₹{{ zone[2] }} typical
+                </span>
+            </div>
+            <div class="actions">
+                <a href="/settings/zones/{{ zone[0] }}/edit" class="btn btn-yellow">Edit Cost</a>
+                {% if zone[3] %}
+                <a href="/settings/zones/{{ zone[0] }}/deactivate" class="btn btn-outline">Deactivate</a>
+                {% else %}
+                <a href="/settings/zones/{{ zone[0] }}/activate" class="btn btn-green">Activate</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        <div style="margin-top:16px;">
+            <a href="/settings/zones/new" class="btn btn-pink">+ Add Zone</a>
         </div>
     </div>
 

@@ -25,6 +25,7 @@
         .tab.active { background: #ff2d78; color: #fff; }
         .tab.active-delivered { background: #39ff14; color: #0a0a0a; }
         .tab.active-cancelled { background: #333; color: #f0f0f0; }
+        .tab.active-bulk { background: #5dff2d; color: #0a0a0a; }
         .tab-count { margin-left: 8px; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; }
         .search-bar { display: flex; gap: 12px; margin-bottom: 24px; }
         .search-input { flex: 1; background: #111; border: 1px solid #333; color: #f0f0f0; padding: 10px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; }
@@ -59,6 +60,7 @@
         <li><a href="/finance">Finance</a></li>
         <li><a href="/recipes">Recipes</a></li>
         <li><a href="/popups">Popups</a></li>
+        <li><a href="/agent/orders">Order Agent</a></li>
         <li><a href="/settings">Settings</a></li>
     </ul>
 </nav>
@@ -71,30 +73,40 @@
 </div>
 
     <div class="tabs">
-        <a href="/orders/all?status=pending" class="tab {% if status_filter == 'pending' %}active{% endif %}">
+        <a href="/orders/all?order_type=regular&status={{ status_filter }}" class="tab {% if order_type == 'regular' %}active{% endif %}">
+            Regular
+        </a>
+        <a href="/orders/all?order_type=bulk&status={{ status_filter }}" class="tab {% if order_type == 'bulk' %}active-bulk{% endif %}">
+            Bulk
+        </a>
+    </div>
+
+    <div class="tabs">
+        <a href="/orders/all?order_type={{ order_type }}&status=pending" class="tab {% if status_filter == 'pending' %}active{% endif %}">
             Pending <span class="tab-count">{{ pending_count }}</span>
         </a>
-        <a href="/orders/all?status=delivered" class="tab {% if status_filter == 'delivered' %}active-delivered{% endif %}">
+        <a href="/orders/all?order_type={{ order_type }}&status=delivered" class="tab {% if status_filter == 'delivered' %}active-delivered{% endif %}">
             Delivered <span class="tab-count">{{ delivered_count }}</span>
         </a>
-        <a href="/orders/all?status=cancelled" class="tab {% if status_filter == 'cancelled' %}active-cancelled{% endif %}">
+        <a href="/orders/all?order_type={{ order_type }}&status=cancelled" class="tab {% if status_filter == 'cancelled' %}active-cancelled{% endif %}">
             Cancelled <span class="tab-count">{{ cancelled_count }}</span>
         </a>
     </div>
 
     <form method="GET" action="/orders/all" style="display:flex; gap:12px; margin-bottom:24px; align-items:center;">
         <input type="hidden" name="status" value="{{ status_filter }}">
+        <input type="hidden" name="order_type" value="{{ order_type }}">
         <select name="search_by" style="background:#111; border:1px solid #333; color:#f0f0f0; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:13px; width:160px;">
             <option value="name" {% if search_by == 'name' %}selected{% endif %}>Name</option>
             <option value="phone" {% if search_by == 'phone' %}selected{% endif %}>Phone</option>
             <option value="order_id" {% if search_by == 'order_id' %}selected{% endif %}>Order #</option>
         </select>
-        <input type="text" name="search" value="{{ search }}" 
-            placeholder="Search..." 
+        <input type="text" name="search" value="{{ search }}"
+            placeholder="Search..."
             style="flex:1; background:#111; border:1px solid #333; color:#f0f0f0; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:13px;">
         <button type="submit" style="background:#ff2d78; color:#fff; border:none; padding:12px 20px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; cursor:pointer;">Search</button>
         {% if search %}
-        <a href="/orders/all?status={{ status_filter }}" style="background:transparent; border:1px solid #333; color:#888; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; text-decoration:none;">Clear</a>
+        <a href="/orders/all?order_type={{ order_type }}&status={{ status_filter }}" style="background:transparent; border:1px solid #333; color:#888; padding:12px 16px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; text-decoration:none;">Clear</a>
         {% endif %}
     </form>
 
@@ -117,11 +129,25 @@
             <div class="order-finance">
                 <p class="order-revenue">₹{{ details['revenue'] or 0 }}</p>
                 <p class="order-profit">₹{{ details['profit'] or 0 }} profit</p>
+                {% if details['bulk_discount_pct'] is not none %}
+                <p style="font-size:11px; color:#5dff2d; margin-top:4px;">{{ details['bulk_discount_pct'] }}% bulk discount</p>
+                {% endif %}
             </div>
             <div class="order-actions">
                 {% if details['status'] == 'pending' %}
-                <a href="/orders/{{ order_id }}/deliver" class="btn btn-sm btn-green">Deliver</a>
-                <a href="/orders/{{ order_id }}/cancel" class="btn btn-sm btn-red">Cancel</a>
+                <a href="/orders/{{ order_id }}/edit" class="btn btn-sm btn-yellow">Edit</a>
+                {% if details['delivery_required'] %}
+                <span id="deliver-btn-{{ order_id }}">
+                    <a href="#" onclick="showDeliverInput({{ order_id }}); return false;" class="btn btn-sm btn-green">Deliver</a>
+                </span>
+                <span id="deliver-form-{{ order_id }}" style="display:none; align-items:center; gap:6px;">
+                    <input type="number" id="fee-{{ order_id }}" value="50" style="width:60px; background:#0a0a0a; border:1px solid #333; color:#f0f0f0; padding:6px; border-radius:4px; font-size:12px;">
+                    <a href="#" onclick="confirmDeliver({{ order_id }}, 'all_orders', '{{ order_type }}'); return false;" class="btn btn-sm btn-green">Confirm</a>
+                </span>
+                {% else %}
+                <a href="/orders/{{ order_id }}/deliver?next=all_orders&order_type={{ order_type }}" class="btn btn-sm btn-green">Deliver</a>
+                {% endif %}
+                <a href="/orders/{{ order_id }}/cancel?next=all_orders&order_type={{ order_type }}" class="btn btn-sm btn-red">Cancel</a>
                 {% endif %}
             </div>
         </div>
@@ -133,6 +159,20 @@
     {% endif %}
 
 </div>
+
+<script>
+function showDeliverInput(orderId) {
+    document.getElementById(`deliver-btn-${orderId}`).style.display = 'none';
+    document.getElementById(`deliver-form-${orderId}`).style.display = 'inline-flex';
+}
+function confirmDeliver(orderId, nextPage, orderType) {
+    const fee = document.getElementById(`fee-${orderId}`).value;
+    let url = `/orders/${orderId}/deliver?fee=${encodeURIComponent(fee)}`;
+    if (nextPage) url += `&next=${nextPage}`;
+    if (orderType) url += `&order_type=${orderType}`;
+    window.location.href = url;
+}
+</script>
 
 </body>
 </html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLAPP — Order Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        .navbar { background: #111; border-bottom: 3px solid #ff2d78; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 28px; font-weight: 900; color: #ff2d78; letter-spacing: 4px; }
+        .nav-links { display: flex; gap: 24px; list-style: none; }
+        .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links a:hover { color: #ff2d78; }
+        .container { max-width: 800px; margin: 0 auto; padding: 32px; width: 100%; flex: 1; display: flex; flex-direction: column; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
+        .chat-window { flex: 1; overflow-y: auto; margin-bottom: 24px; display: flex; flex-direction: column; gap: 16px; min-height: 400px; }
+        .msg { max-width: 75%; padding: 14px 18px; border-radius: 12px; font-size: 14px; font-weight: 400; font-family: Arial, sans-serif; line-height: 1.6; white-space: pre-wrap; }
+        .msg-user { background: #ff2d78; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-agent { background: #111; color: #f0f0f0; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #222; }
+        .empty-state { text-align: center; color: #555; padding: 80px 20px; }
+        .empty-state p { margin-bottom: 8px; }
+        .suggestion { display: inline-block; background: #111; border: 1px solid #333; color: #888; padding: 8px 16px; border-radius: 20px; font-size: 12px; margin: 4px; cursor: pointer; font-family: Arial, sans-serif; }
+        .suggestion:hover { border-color: #ff2d78; color: #ff2d78; }
+        .input-bar { display: flex; gap: 12px; position: sticky; bottom: 24px; }
+        .input-bar input { flex: 1; background: #111; border: 1px solid #333; color: #f0f0f0; padding: 16px 20px; border-radius: 24px; font-family: Arial, sans-serif; font-size: 14px; }
+        .input-bar input:focus { outline: none; border-color: #ff2d78; }
+        .input-bar button { background: #ff2d78; color: #fff; border: none; padding: 16px 28px; border-radius: 24px; font-family: 'Arial Black', Arial, sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="logo">SLAPP</div>
+    <ul class="nav-links">
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/orders">Orders</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
+        <li><a href="/stock">Stock</a></li>
+        <li><a href="/finance">Finance</a></li>
+        <li><a href="/recipes">Recipes</a></li>
+        <li><a href="/popups">Popups</a></li>
+        <li><a href="/agent/orders">Order Agent</a></li>
+        <li><a href="/settings">Settings</a></li>
+    </ul>
+</nav>
+<div class="container">
+    <div class="page-header">
+        <p class="page-title"> Order Agent</p>
+        <a href="/agent/orders/clear" class="btn btn-outline">Clear Chat</a>
+    </div>
+
+    <div class="chat-window" id="chat">
+        {% if chat %}
+            {% for msg in chat %}
+            <div class="msg {% if msg.role == 'user' %}msg-user{% else %}msg-agent{% endif %}">{{ msg.content }}</div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p style="font-size:16px; font-weight:900; color:#888;">Ask me anything about your orders</p>
+                <p style="font-size:12px; margin-bottom:20px;">I can look things up, edit orders, and detect anomalies</p>
+                <span class="suggestion" onclick="ask(this)">show me saturday's bake brief</span>
+                <span class="suggestion" onclick="ask(this)">who are my repeat customers?</span>
+                <span class="suggestion" onclick="ask(this)">run anomaly checks</span>
+                <span class="suggestion" onclick="ask(this)">what orders are pending?</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <form method="POST" action="/agent/orders" class="input-bar">
+        <input type="text" name="message" id="msgInput" placeholder="Ask the order agent..." autocomplete="off" autofocus>
+        <button type="submit">Send</button>
+    </form>
+</div>
+
+<script>
+function ask(el) {
+    document.getElementById('msgInput').value = el.textContent;
+    document.querySelector('.input-bar').submit();
+}
+// scroll to bottom on load
+const chat = document.getElementById('chat');
+chat.scrollTop = chat.scrollHeight;
+</script>
+
+</body>
+</html>

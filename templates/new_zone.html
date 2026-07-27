@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLAPP — New Box Type</title>
+    <title>SLAPP — New Delivery Zone</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
@@ -40,26 +40,18 @@
     </ul>
 </nav>
 <div class="container">
-    <p class="page-title">New Box Type</p>
-    <form method="POST" action="/settings/packaging/new">
+    <p class="page-title">New Delivery Zone</p>
+    <form method="POST" action="/settings/zones/new">
         <div class="form-section">
             <div class="form-group">
-                <label>Box Name</label>
-                <input type="text" name="box_name" placeholder="e.g. Large Box" required>
+                <label>Zone Name</label>
+                <input type="text" name="zone_name" placeholder="e.g. Koramangala" required>
             </div>
             <div class="form-group">
-                <label>Capacity (cookies per box)</label>
-                <input type="number" name="capacity" placeholder="e.g. 12" required>
+                <label>Typical Porter Cost (₹)</label>
+                <input type="number" name="typical_porter_cost" step="0.01" min="0" placeholder="0" value="0">
             </div>
-            <div class="form-group">
-                <label>Cost per box (₹)</label>
-                <input type="number" name="cost_per_box" step="0.01" placeholder="e.g. 35" required>
-            </div>
-            <div class="form-group">
-                <label>Low stock threshold</label>
-                <input type="number" name="threshold" placeholder="e.g. 20" required>
-            </div>
-            <button type="submit" class="btn btn-pink">Add Box Type</button>
+            <button type="submit" class="btn btn-pink">Add Zone</button>
             <a href="/settings" class="btn btn-outline">Cancel</a>
         </div>
     </form>

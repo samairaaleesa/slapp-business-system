@@ -209,7 +209,67 @@ def get_all_combos():
     conn.close()
     return combos
 
-def update_packaging(box_name, capacity=None, cost_per_box=None, 
+def add_delivery_zone(zone_name, typical_porter_cost=0):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        INSERT INTO delivery_zones (zone_name, typical_porter_cost)
+        VALUES (%s, %s)
+        ON CONFLICT (zone_name) DO NOTHING
+    ''', (zone_name, typical_porter_cost))
+
+    conn.commit()
+    conn.close()
+    print(f"Delivery zone {zone_name} added!")
+
+def update_delivery_zone(zone_id, zone_name=None, typical_porter_cost=None):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    if zone_name:
+        cursor.execute('UPDATE delivery_zones SET zone_name = %s WHERE id = %s', (zone_name, zone_id))
+
+    if typical_porter_cost is not None:
+        cursor.execute('UPDATE delivery_zones SET typical_porter_cost = %s WHERE id = %s', (typical_porter_cost, zone_id))
+
+    conn.commit()
+    conn.close()
+
+def deactivate_delivery_zone(zone_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('UPDATE delivery_zones SET is_active = 0 WHERE id = %s', (zone_id,))
+
+    conn.commit()
+    conn.close()
+    print(f"Delivery zone #{zone_id} deactivated!")
+
+def activate_delivery_zone(zone_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('UPDATE delivery_zones SET is_active = 1 WHERE id = %s', (zone_id,))
+
+    conn.commit()
+    conn.close()
+
+def get_all_delivery_zones():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT id, zone_name, typical_porter_cost, is_active
+        FROM delivery_zones
+        ORDER BY is_active DESC, zone_name
+    ''')
+
+    zones = cursor.fetchall()
+    conn.close()
+    return zones
+
+def update_packaging(box_name, capacity=None, cost_per_box=None,
                      stock=None, low_stock_threshold=None):
     conn = get_connection()
     cursor = conn.cursor()

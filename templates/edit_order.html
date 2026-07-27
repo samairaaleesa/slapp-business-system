@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLAPP — New Order</title>
+    <title>SLAPP — Edit Order</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
@@ -13,33 +13,32 @@
         .nav-links a { color: #f0f0f0; text-decoration: none; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
         .nav-links a:hover { color: #ff2d78; }
         .container { max-width: 700px; margin: 0 auto; padding: 32px; }
-        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 32px; }
-        .form-section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+        .page-title { font-size: 13px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        .customer-name { font-size: 24px; font-weight: 900; color: #ff2d78; margin-bottom: 32px; }
+        .section { background: #111; border-radius: 8px; padding: 24px; margin-bottom: 20px; }
         .section-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #ff2d78; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #222; }
         .form-group { margin-bottom: 16px; }
         label { display: block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
-        input, select, textarea { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 12px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 14px; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #ff2d78; }
+        input { width: 100%; background: #0a0a0a; border: 1px solid #333; color: #f0f0f0; padding: 12px 16px; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 14px; }
+        input:focus { outline: none; border-color: #ff2d78; }
         .flavour-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #222; }
         .flavour-row:last-child { border-bottom: none; }
-        .flavour-name { font-size: 15px; font-weight: 700; }
         .qty-input { width: 80px; text-align: center; }
         .warning-box { background: #ff6b0015; border: 1px solid #ff6b00; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
         .warning-title { color: #ff6b00; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
         .warning-item { font-size: 14px; color: #ff6b00; padding: 4px 0; }
         .btn { padding: 14px 32px; border: none; border-radius: 4px; font-family: 'Arial Black', Arial, sans-serif; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: inline-block; width: 100%; text-align: center; margin-top: 8px; }
-        .btn-pink { background: #ff2d78; color: #fff; }
+        .btn-green { background: #39ff14; color: #0a0a0a; }
         .btn-outline { background: transparent; border: 1px solid #333; color: #888; }
     </style>
 </head>
 <body>
-
 <nav class="navbar">
     <div class="logo">SLAPP</div>
     <ul class="nav-links">
         <li><a href="/">Dashboard</a></li>
-        <li><a href="/bake">Bake Brief</a></li>
         <li><a href="/orders">Orders</a></li>
+        <li><a href="/bake">Bake Brief</a></li>
         <li><a href="/stock">Stock</a></li>
         <li><a href="/finance">Finance</a></li>
         <li><a href="/recipes">Recipes</a></li>
@@ -48,9 +47,9 @@
         <li><a href="/settings">Settings</a></li>
     </ul>
 </nav>
-
 <div class="container">
-    <p class="page-title">New Order</p>
+    <p class="page-title">Edit Order #{{ order[0] }}</p>
+    <p class="customer-name">{{ order[1] }} · {{ order[2] }}</p>
 
     {% if warnings %}
     <div class="warning-box">
@@ -68,32 +67,34 @@
     </div>
     {% endif %}
 
-    <form method="POST" action="/orders/new">
-        
-        <div class="form-section">
+    <form method="POST" action="/orders/{{ order[0] }}/edit">
+        <div class="section">
             <p class="section-title">Customer Details</p>
             <div class="form-group">
                 <label>Name</label>
-                <input type="text" name="name" placeholder="Customer name" required>
+                <input type="text" name="name" value="{{ order[1] }}" required>
             </div>
             <div class="form-group">
                 <label>Phone</label>
-                <input type="text" name="phone" placeholder="Phone number" required>
+                <input type="text" name="phone" value="{{ order[2] }}" required>
             </div>
-            <div class="form-group">
-                <label>Delivery Address</label>
-                <textarea name="address" placeholder="Full delivery address" rows="2" required></textarea>
-            </div>
+        </div>
+        <div class="section">
+            <p class="section-title">Delivery Details</p>
             <div class="form-group">
                 <label>Delivery Date</label>
-                <input type="date" name="delivery_date" required>
+                <input type="date" name="delivery_date" value="{{ order[4] }}" required>
             </div>
             <div class="form-group">
-                <label>Notes (optional)</label>
-                <input type="text" name="notes" placeholder="Any special instructions">
+                <label>Address</label>
+                <input type="text" name="address" value="{{ order[3] }}" required>
             </div>
             <div class="form-group">
-                <label><input type="checkbox" name="delivery_required" value="1"> Requires delivery (adds ₹50 if order is under ₹500)</label>
+                <label>Notes</label>
+                <input type="text" name="notes" value="{{ order[5] or '' }}">
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" name="delivery_required" value="1" {% if order[6] %}checked{% endif %}> Requires delivery (adds ₹50 if order is under ₹500)</label>
             </div>
             <div class="form-group">
                 <label>Delivery Zone (if delivery required)</label>
@@ -101,35 +102,44 @@
                     <option value="">— none / pickup —</option>
                     {% for zone in zones %}
                     {% if zone[3] %}
-                    <option value="{{ zone[0] }}">{{ zone[1] }}</option>
+                    <option value="{{ zone[0] }}" {% if order[8] == zone[0] %}selected{% endif %}>{{ zone[1] }}</option>
                     {% endif %}
                     {% endfor %}
                 </select>
             </div>
         </div>
 
-        <div class="form-section">
-            <p class="section-title">Cookie Order</p>
-            {% for recipe in recipes %}
-            {% if recipe[3] %}
-            <div class="flavour-row">
-                <span class="flavour-name">{{ recipe[1].replace('_slapp','').replace('_',' ').title() }}</span>
-                <input type="number" name="qty_{{ recipe[1] }}" class="qty-input" min="0" value="0" placeholder="0" >
+        <div class="section">
+            <p class="section-title">Bulk Discount</p>
+            <div class="form-group">
+                <label><input type="checkbox" name="is_bulk" value="1" {% if order[7] is not none %}checked{% endif %}> This is a bulk order (custom discount instead of auto-combo)</label>
             </div>
-            {% endif %}
+            <div class="form-group">
+                <label>Discount % on total</label>
+                <input type="number" name="bulk_discount_pct" min="0" max="100" step="0.1" value="{{ order[7] or 0 }}">
+            </div>
+        </div>
+
+        <div class="section">
+            <p class="section-title">Cookie Order</p>
+            {% set flavours = [
+                ('the_classic_slapp', 'Classic'),
+                ('the_brownie_slapp', 'Brownie'),
+                ('comfort_slapp', 'Comfort'),
+                ('red_velvet_slapp', 'Velvety')
+            ] %}
+            {% for key, label in flavours %}
+            <div class="flavour-row">
+                <span style="font-size:15px; font-weight:700;">{{ label }}</span>
+                <input type="number" name="item_{{ key }}" class="qty-input"
+                       value="{{ items.get(key, 0) }}" min="0">
+            </div>
             {% endfor %}
         </div>
 
-        <div class="form-section">
-            <p class="section-title">Combo</p>
-            <p style="font-size:12px; color:#888;">Best combo mix is applied automatically based on quantity — no need to pick one.</p>
-        </div>
-
-        <button type="submit" class="btn btn-pink">Place Order</button>
-        <a href="/orders" class="btn btn-outline">Cancel</a>
-
+        <button type="submit" class="btn btn-green">✓ Save Changes</button>
+        <a href="/orders/all" class="btn btn-outline">Cancel</a>
     </form>
 </div>
-
 </body>
 </html>

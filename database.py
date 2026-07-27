@@ -2,7 +2,7 @@ import psycopg2
 import os
 
 DB_CONFIG = {
-    'dbname': 'slapp_db',
+    'dbname': os.environ.get('SLAPP_DB_NAME', 'slapp_db'),
     'user': os.environ.get('USER'),
     'host': 'localhost',
     'port': 5432
@@ -39,6 +39,15 @@ def create_tables():
     ''')
 
     cursor.execute('''
+        CREATE TABLE IF NOT EXISTS delivery_zones (
+            id SERIAL PRIMARY KEY,
+            zone_name TEXT UNIQUE NOT NULL,
+            typical_porter_cost REAL DEFAULT 0,
+            is_active INTEGER DEFAULT 1
+        )
+    ''')
+
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id SERIAL PRIMARY KEY,
             customer_id INTEGER NOT NULL,
@@ -46,10 +55,15 @@ def create_tables():
             status TEXT DEFAULT 'pending',
             address TEXT NOT NULL,
             combo_id INTEGER REFERENCES combos(id),
+            delivery_required BOOLEAN DEFAULT false,
+            bulk_discount_pct REAL,
             packaging_cost REAL DEFAULT 0,
             total_cost REAL DEFAULT 0,
             revenue REAL DEFAULT 0,
             ingredient_cost REAL DEFAULT 0,
+            delivery_cost_actual REAL DEFAULT 0,
+            delivery_fee_charged REAL DEFAULT 0,
+            delivery_zone_id INTEGER REFERENCES delivery_zones(id),
             profit REAL DEFAULT 0,
             margin REAL DEFAULT 0,
             notes TEXT,
@@ -65,6 +79,15 @@ def create_tables():
             flavour TEXT NOT NULL,
             quantity INTEGER NOT NULL,
             FOREIGN KEY (order_id) REFERENCES orders(id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS order_combos (
+            id SERIAL PRIMARY KEY,
+            order_id INTEGER NOT NULL REFERENCES orders(id),
+            combo_id INTEGER NOT NULL REFERENCES combos(id),
+            count INTEGER NOT NULL
         )
     ''')
 

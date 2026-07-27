@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLAPP — New Order</title>
+    <title>SLAPP — Bulk Order</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0a0a0a; color: #f0f0f0; font-family: 'Arial Black', Arial, sans-serif; min-height: 100vh; }
@@ -50,7 +50,7 @@
 </nav>
 
 <div class="container">
-    <p class="page-title">New Order</p>
+    <p class="page-title">Bulk Order</p>
 
     {% if warnings %}
     <div class="warning-box">
@@ -68,8 +68,8 @@
     </div>
     {% endif %}
 
-    <form method="POST" action="/orders/new">
-        
+    <form method="POST" action="/orders/bulk">
+
         <div class="form-section">
             <p class="section-title">Customer Details</p>
             <div class="form-group">
@@ -121,11 +121,15 @@
         </div>
 
         <div class="form-section">
-            <p class="section-title">Combo</p>
-            <p style="font-size:12px; color:#888;">Best combo mix is applied automatically based on quantity — no need to pick one.</p>
+            <p class="section-title">Bulk Discount</p>
+            <div class="form-group">
+                <label>Discount % on total</label>
+                <input type="number" name="bulk_discount_pct" min="0" max="100" step="0.1" value="0" placeholder="e.g. 20">
+            </div>
+            <p style="font-size:12px; color:#888;">This bypasses the standard combo pricing — the flat discount you enter here is applied to the raw total instead.</p>
         </div>
 
-        <button type="submit" class="btn btn-pink">Place Order</button>
+        <button type="submit" class="btn btn-pink">Place Bulk Order</button>
         <a href="/orders" class="btn btn-outline">Cancel</a>
 
     </form>
