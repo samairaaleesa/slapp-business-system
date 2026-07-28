@@ -1257,13 +1257,20 @@ def edit_order(order_id):
         is_bulk = bool(request.form.get('is_bulk'))
         bulk_discount_pct = float(request.form.get('bulk_discount_pct') or 0) if is_bulk else None
         delivery_zone_id = request.form.get('delivery_zone_id') or None
-        # update customer details
+        # update customer details (leave phone untouched if cleared - blanking
+        # it here has no "assign a new placeholder" semantic, unlike creation)
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE customers SET name = %s, phone = %s
-            WHERE id = (SELECT customer_id FROM orders WHERE id = %s)
-        ''', (name, phone, order_id))
+        if phone:
+            cursor.execute('''
+                UPDATE customers SET name = %s, phone = %s
+                WHERE id = (SELECT customer_id FROM orders WHERE id = %s)
+            ''', (name, phone, order_id))
+        else:
+            cursor.execute('''
+                UPDATE customers SET name = %s
+                WHERE id = (SELECT customer_id FROM orders WHERE id = %s)
+            ''', (name, order_id))
         conn.commit()
         conn.close()
         items = {}

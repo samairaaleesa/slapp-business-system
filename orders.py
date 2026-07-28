@@ -12,22 +12,37 @@ def save_order_combos(order_id, breakdown):
     conn.commit()
     conn.close()
 
+def generate_placeholder_phone():
+    """Real phone numbers here always start with 6-9, so a leading-zero
+    number is always a placeholder. Each one gets a unique number so
+    different no-phone customers never collide into the same record."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT phone FROM customers WHERE phone LIKE '0%' ORDER BY phone DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    next_num = int(row[0]) + 1 if row else 1
+    return f"{next_num:010d}"
+
 def add_customer(name, phone, address):
     conn = get_connection()
     cursor = conn.cursor()
-    
+
+    if not phone:
+        phone = generate_placeholder_phone()
+
     cursor.execute('''
         INSERT INTO customers (name, phone, address)
         VALUES (%s, %s, %s)
         ON CONFLICT (phone) DO NOTHING
     ''', (name, phone, address))
-    
+
     cursor.execute('SELECT id FROM customers WHERE phone = %s', (phone,))
     customer = cursor.fetchone()
-    
+
     conn.commit()
     conn.close()
-    
+
     return customer[0]
 
 def recalculate_order_finance(order_id):
