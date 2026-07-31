@@ -209,18 +209,14 @@
         <!-- Items -->
         <div class="section">
             <p class="section-title">Cookie Order</p>
-            {% set flavours = [
-                ('the_classic_slapp', 'Classic'),
-                ('the_brownie_slapp', 'Brownie'),
-                ('comfort_slapp', 'Comfort'),
-                ('red_velvet_slapp', 'Velvety')
-            ] %}
-            {% for key, label in flavours %}
+            {% for recipe in recipes %}
+            {% if recipe[3] %}
             <div class="flavour-row">
-                <span style="font-size:15px; font-weight:700;">{{ label }}</span>
-                <input type="number" name="item_{{ key }}" class="qty-input"
-                        value="{{ extracted['items'].get(key, 0) }}" min="0">
+                <span style="font-size:15px; font-weight:700;">{{ recipe[1].replace('_slapp','').replace('_',' ').title() }}</span>
+                <input type="number" name="item_{{ recipe[1] }}" class="qty-input"
+                        value="{{ extracted['items'].get(recipe[1], 0) }}" min="0">
             </div>
+            {% endif %}
             {% endfor %}
         </div>
         {% if stock_warnings %}

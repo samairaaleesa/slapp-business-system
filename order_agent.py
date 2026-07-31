@@ -485,13 +485,23 @@ TOOL_FUNCTIONS = {
 
 def run_agent(user_message, chat_history=None):
     client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-    
+
+    from database import get_connection
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT name FROM recipes WHERE is_active = 1 ORDER BY name')
+    flavour_keys = ", ".join(
+        f"{row[0]} ({row[0].replace('_slapp', '').replace('_', ' ').title()})"
+        for row in cursor.fetchall()
+    )
+    conn.close()
+
     system_prompt = f"""You are the SLAPP Order Manager — the operations agent for a cookie business in Bangalore.
 
 TODAY: {date.today()} ({date.today().strftime('%A')})
 UPCOMING DATES:
 {chr(10).join(f"- {(date.today() + timedelta(days=i)).strftime('%A')} = {date.today() + timedelta(days=i)}" for i in range(8))}
-FLAVOUR KEYS: the_classic_slapp (Classic/choco chip), the_brownie_slapp (Brownie), comfort_slapp (Comfort/cinnamon), red_velvet_slapp (Velvety/red velvet)
+FLAVOUR KEYS: {flavour_keys}
 
 YOUR TOOLS:
 - get_orders: fetch orders with filters (status, date, date range, customer). Your main data source.

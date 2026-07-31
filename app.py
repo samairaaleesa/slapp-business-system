@@ -1223,7 +1223,8 @@ def dm_order():
                 today=date.today(),
                 stock_warnings=warnings,
                 combos=get_all_combos(),
-                zones=get_all_delivery_zones()
+                zones=get_all_delivery_zones(),
+                recipes=get_all_recipes()
             )
 
         if items:
@@ -1237,7 +1238,8 @@ def dm_order():
         today=date.today(),
         stock_warnings=None,
         combos=get_all_combos(),
-        zones=get_all_delivery_zones()
+        zones=get_all_delivery_zones(),
+        recipes=get_all_recipes()
     )
 
 @app.route('/orders/<int:order_id>/edit', methods=['GET', 'POST'])
@@ -1299,6 +1301,7 @@ def edit_order(order_id):
                 order=order,
                 items=items,
                 zones=get_all_delivery_zones(),
+                recipes=get_all_recipes(),
                 warnings=[],
                 packaging_warning=f'Need to pack {total_cookies} cookies but total box capacity available is {total_capacity}')
 
@@ -1323,6 +1326,7 @@ def edit_order(order_id):
                 order=order,
                 items=items,
                 zones=get_all_delivery_zones(),
+                recipes=get_all_recipes(),
                 warnings=result['warnings'])
 
         return redirect(url_for('all_orders'))
@@ -1341,7 +1345,7 @@ def edit_order(order_id):
     items = {row[0]: row[1] for row in cursor.fetchall()}
     conn.close()
 
-    return render_template('edit_order.html', order=order, items=items, zones=get_all_delivery_zones(), warnings=[])
+    return render_template('edit_order.html', order=order, items=items, zones=get_all_delivery_zones(), recipes=get_all_recipes(), warnings=[])
 
 @app.route('/agent/orders', methods=['GET', 'POST'])
 def order_agent_page():

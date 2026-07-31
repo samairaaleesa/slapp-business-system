@@ -9,15 +9,17 @@ load_dotenv()
 
 def extract_order_from_dm(dm_text, stock, active_combos):
     client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-    
+
+    flavour_lines = "\n".join(
+        f"- {key} = {key.replace('_slapp', '').replace('_', ' ').title()} SLAPP"
+        for key in stock.keys()
+    )
+
     system_prompt = f"""You are an order extraction assistant for SLAPP, a cookie brand in Bangalore.
 Extract order details from Instagram DMs and return ONLY valid JSON, no explanation.
 
 FLAVOURS (use these exact keys):
-- the_classic_slapp = Classic SLAPP (chocolate chip)
-- the_brownie_slapp = Brownie SLAPP (brownie cookie)  
-- comfort_slapp = Comfort SLAPP (cinnamon cookie)
-- red_velvet_slapp = Velvety SLAPP (red velvet)
+{flavour_lines}
 
 CURRENT STOCK: {json.dumps(stock)}
 ACTIVE COMBOS: {json.dumps(active_combos)}
