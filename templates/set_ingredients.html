@@ -58,12 +58,12 @@
                     <p class="ingredient-name">{{ name.replace('_',' ').title() }}</p>
                     <p class="ingredient-unit">Current: {{ qty }}{{ unit }}</p>
                 </div>
-                <input type="number" 
-                       name="qty_{{ name }}" 
-                       class="qty-input" 
+                <input type="number"
+                       name="qty_{{ name }}"
+                       class="qty-input"
                        placeholder="{{ qty }}"
                        min="0"
-                       step="0.1" required>
+                       step="0.1">
             </div>
             {% endfor %}
         </div>
