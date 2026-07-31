@@ -91,54 +91,49 @@ def delete_recipe(recipe_name):
     conn.close()
     print(f"Recipe {recipe_name} deactivated!")
 
-def add_ingredient_to_recipe(recipe_name, ingredient_name, amount, unit):
+def add_ingredient_to_recipe(recipe_name, ingredient_name, amount, unit, stage='dough'):
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     cursor.execute('SELECT id FROM recipes WHERE name = %s', (recipe_name,))
     recipe = cursor.fetchone()
-    
+
     if not recipe:
         print(f"Recipe {recipe_name} not found!")
         return
-    
+
     cursor.execute('''
-        INSERT INTO recipe_ingredients (recipe_id, ingredient_name, amount, unit)
-        VALUES (%s, %s, %s, %s)
-    ''', (recipe[0], ingredient_name, amount, unit))
-    
+        INSERT INTO recipe_ingredients (recipe_id, ingredient_name, amount, unit, stage)
+        VALUES (%s, %s, %s, %s, %s)
+    ''', (recipe[0], ingredient_name, amount, unit, stage))
+
     conn.commit()
     conn.close()
-    print(f"Added {ingredient_name} to {recipe_name}")
+    print(f"Added {ingredient_name} ({stage}) to {recipe_name}")
 
-def remove_ingredient_from_recipe(recipe_name, ingredient_name):
+def remove_ingredient_from_recipe(ingredient_id):
     conn = get_connection()
     cursor = conn.cursor()
-    
-    cursor.execute('''
-        DELETE FROM recipe_ingredients
-        WHERE recipe_id = (SELECT id FROM recipes WHERE name = %s)
-        AND ingredient_name = %s
-    ''', (recipe_name, ingredient_name))
-    
+
+    cursor.execute('DELETE FROM recipe_ingredients WHERE id = %s', (ingredient_id,))
+
     conn.commit()
     conn.close()
-    print(f"Removed {ingredient_name} from {recipe_name}")
+    print(f"Removed recipe_ingredients row #{ingredient_id}")
 
-def update_ingredient_amount(recipe_name, ingredient_name, new_amount):
+def update_ingredient_amount(ingredient_id, new_amount):
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     cursor.execute('''
         UPDATE recipe_ingredients
         SET amount = %s
-        WHERE recipe_id = (SELECT id FROM recipes WHERE name = %s)
-        AND ingredient_name = %s
-    ''', (new_amount, recipe_name, ingredient_name))
-    
+        WHERE id = %s
+    ''', (new_amount, ingredient_id))
+
     conn.commit()
     conn.close()
-    print(f"Updated {ingredient_name} in {recipe_name} to {new_amount}")
+    print(f"Updated recipe_ingredients row #{ingredient_id} to {new_amount}")
 
 def update_flavour_price(flavour, new_price):
     conn = get_connection()

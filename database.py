@@ -110,6 +110,7 @@ def create_tables():
             ingredient_name TEXT NOT NULL,
             amount REAL NOT NULL,
             unit TEXT NOT NULL,
+            stage TEXT DEFAULT 'dough',
             FOREIGN KEY (recipe_id) REFERENCES recipes(id)
         )
     ''')

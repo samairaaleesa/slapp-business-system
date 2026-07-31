@@ -68,18 +68,6 @@
         </form>
     </div>
     <a href="/finance/cashflow/add" class="btn btn-yellow">+ Add Transaction</a>
-    
-    <!-- Spending Summary -->
-    {% if summary %}
-    <div class="stats-grid">
-        {% for category, total in summary %}
-        <div class="stat-card">
-            <p class="stat-label">{{ category.title() }}</p>
-            <p class="stat-value expense">₹{{ "%.2f"|format(total) }}</p>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
 
     <!-- Transaction History -->
     <div class="section">

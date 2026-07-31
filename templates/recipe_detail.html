@@ -60,22 +60,46 @@
     <p class="recipe-yield">Base yield: {{ recipe['base_yield'] }} cookies</p>
 
     <div class="section">
-        <p class="section-title">Ingredients</p>
-        {% for ing in recipe['ingredients'] %}
+        <p class="section-title">Dough Ingredients</p>
+        {% for ing in recipe['ingredients'] if ing['stage'] != 'topping' %}
         <div class="ingredient-row">
             <span class="ingredient-name">{{ ing['ingredient'].replace('_',' ').title() }}</span>
             <span class="ingredient-amount">{{ ing['amount'] }}{{ ing['unit'] }}</span>
             <div class="ingredient-actions">
-                <a href="/recipes/{{ recipe['name'] }}/ingredient/{{ ing['ingredient'] }}/edit" class="btn btn-yellow">Edit</a>
-                <a href="/recipes/{{ recipe['name'] }}/ingredient/{{ ing['ingredient'] }}/remove" class="btn btn-red">Remove</a>
+                <a href="/recipes/{{ recipe['name'] }}/ingredient/{{ ing['id'] }}/edit" class="btn btn-yellow">Edit</a>
+                <a href="/recipes/{{ recipe['name'] }}/ingredient/{{ ing['id'] }}/remove" class="btn btn-red">Remove</a>
             </div>
         </div>
         {% endfor %}
+    </div>
 
-        <form method="POST" action="/recipes/{{ recipe['name'] }}/ingredient/add" class="add-form" style="margin-top: 20px;">
+    {% set topping_ings = recipe['ingredients'] | selectattr('stage', 'equalto', 'topping') | list %}
+    {% if topping_ings %}
+    <div class="section">
+        <p class="section-title">Topping <span style="color:#888; text-transform:none; letter-spacing:0; font-size:11px;">— added after baking, not mixed into the dough</span></p>
+        {% for ing in topping_ings %}
+        <div class="ingredient-row">
+            <span class="ingredient-name">{{ ing['ingredient'].replace('_',' ').title() }}</span>
+            <span class="ingredient-amount">{{ ing['amount'] }}{{ ing['unit'] }}</span>
+            <div class="ingredient-actions">
+                <a href="/recipes/{{ recipe['name'] }}/ingredient/{{ ing['id'] }}/edit" class="btn btn-yellow">Edit</a>
+                <a href="/recipes/{{ recipe['name'] }}/ingredient/{{ ing['id'] }}/remove" class="btn btn-red">Remove</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <p class="section-title">Add Ingredient</p>
+        <form method="POST" action="/recipes/{{ recipe['name'] }}/ingredient/add" class="add-form">
             <input type="text" name="ingredient_name" placeholder="Ingredient name">
             <input type="number" name="amount" placeholder="Amount" step="0.1">
             <input type="text" name="unit" placeholder="Unit" style="width: 60px; flex: none;">
+            <select name="stage" style="background:#0a0a0a; border:1px solid #333; color:#f0f0f0; padding:8px 12px; border-radius:4px; font-family:'Arial Black',Arial,sans-serif; font-size:13px; width:150px; flex:none;">
+                <option value="dough">Dough</option>
+                <option value="topping">Topping (post-bake)</option>
+            </select>
             <button type="submit" class="btn btn-pink">+ Add</button>
         </form>
     </div>

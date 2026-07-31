@@ -568,11 +568,11 @@ def recipe_detail(recipe_name):
     from database import get_connection
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT ingredient_name, amount, unit FROM recipe_ingredients WHERE recipe_id = %s', (row[0],))
+    cursor.execute('SELECT id, ingredient_name, amount, unit, stage FROM recipe_ingredients WHERE recipe_id = %s ORDER BY id', (row[0],))
     for ing in cursor.fetchall():
-        recipe['ingredients'].append({'ingredient': ing[0], 'amount': ing[1], 'unit': ing[2]})
+        recipe['ingredients'].append({'id': ing[0], 'ingredient': ing[1], 'amount': ing[2], 'unit': ing[3], 'stage': ing[4] or 'dough'})
     conn.close()
-    
+
     return render_template('recipe_detail.html', recipe=recipe)
 
 @app.route('/recipes/<recipe_name>/delete')
@@ -580,9 +580,9 @@ def delete_recipe_route(recipe_name):
     delete_recipe(recipe_name)
     return redirect(url_for('recipes_page'))
 
-@app.route('/recipes/<recipe_name>/ingredient/<ingredient_name>/remove')
-def remove_ingredient_route(recipe_name, ingredient_name):
-    remove_ingredient_from_recipe(recipe_name, ingredient_name)
+@app.route('/recipes/<recipe_name>/ingredient/<int:ingredient_id>/remove')
+def remove_ingredient_route(recipe_name, ingredient_id):
+    remove_ingredient_from_recipe(ingredient_id)
     return redirect(url_for('recipe_detail', recipe_name=recipe_name))
 @app.route('/recipes/<recipe_name>/activate')
 
@@ -894,22 +894,20 @@ def new_packaging():
 
 @app.route('/finance/cashflow', methods=['GET', 'POST'])
 def cashflow_page():
-    from cashflow import get_balance, set_initial_balance, get_transactions, get_spending_summary
-    
+    from cashflow import get_balance, set_initial_balance, get_transactions
+
     if request.method == 'POST':
         amount = request.form.get('balance', '').strip()
         if amount:
             set_initial_balance(float(amount))
         return redirect(url_for('cashflow_page'))
-    
+
     balance = get_balance()
     transactions = get_transactions()
-    summary = get_spending_summary()
-    
+
     return render_template('cashflow.html',
         balance=balance,
-        transactions=transactions,
-        summary=summary
+        transactions=transactions
     )
 @app.route('/popups/<int:popup_id>')
 def popup_detail(popup_id):
@@ -1015,41 +1013,40 @@ def scale_recipe():
         portions=portions
     )
 
-@app.route('/recipes/<recipe_name>/ingredient/<ingredient_name>/edit', methods=['GET', 'POST'])
-def edit_ingredient_route(recipe_name, ingredient_name):
+@app.route('/recipes/<recipe_name>/ingredient/<int:ingredient_id>/edit', methods=['GET', 'POST'])
+def edit_ingredient_route(recipe_name, ingredient_id):
     if request.method == 'POST':
         amount = float(request.form['amount'])
-        update_ingredient_amount(recipe_name, ingredient_name, amount)
+        update_ingredient_amount(ingredient_id, amount)
         return redirect(url_for('recipe_detail', recipe_name=recipe_name))
-    
+
     from database import get_connection
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT ri.amount, ri.unit FROM recipe_ingredients ri
-        JOIN recipes r ON ri.recipe_id = r.id
-        WHERE r.name = %s AND ri.ingredient_name = %s
-    ''', (recipe_name, ingredient_name))
+        SELECT ingredient_name, amount, unit FROM recipe_ingredients WHERE id = %s
+    ''', (ingredient_id,))
     result = cursor.fetchone()
     conn.close()
-    
+
     return render_template('edit_simple.html',
-        title=f"Edit {ingredient_name.replace('_',' ').title()} in {recipe_name.replace('_slapp','').replace('_',' ').title()}",
-        field_label=f'Amount ({result[1] if result else "g"})',
+        title=f"Edit {result[0].replace('_',' ').title()} in {recipe_name.replace('_slapp','').replace('_',' ').title()}",
+        field_label=f'Amount ({result[2] if result else "g"})',
         field_name='amount',
-        current_value=result[0] if result else '',
-        action=f'/recipes/{recipe_name}/ingredient/{ingredient_name}/edit')
+        current_value=result[1] if result else '',
+        action=f'/recipes/{recipe_name}/ingredient/{ingredient_id}/edit')
 
 @app.route('/recipes/<recipe_name>/ingredient/add', methods=['POST'])
 def add_ingredient_route(recipe_name):
     ingredient_name = request.form['ingredient_name'].lower().replace(' ', '_')
     amount = request.form.get('amount', '').strip()
     unit = request.form.get('unit', '').strip()
-    
+    stage = request.form.get('stage', 'dough')
+
     if not amount or not ingredient_name:
         return redirect(url_for('recipe_detail', recipe_name=recipe_name))
-    
-    add_ingredient_to_recipe(recipe_name, ingredient_name, float(amount), unit)
+
+    add_ingredient_to_recipe(recipe_name, ingredient_name, float(amount), unit, stage)
     return redirect(url_for('recipe_detail', recipe_name=recipe_name))
 
 @app.route('/settings/combos/<int:combo_id>/delete')
