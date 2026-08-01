@@ -501,6 +501,15 @@ def get_daily_timeseries(start_date, end_date):
         flavour_series.setdefault(flavour, {dt: 0 for dt in dates})
         flavour_series[flavour][str(day)] = int(qty)
 
+    # every active recipe gets a line, even at zero, so newly added flavours
+    # show up immediately instead of only appearing after their first delivery
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM recipes WHERE is_active = 1")
+    for (name,) in cursor.fetchall():
+        flavour_series.setdefault(name, {dt: 0 for dt in dates})
+    conn.close()
+
     return {
         'dates': dates,
         'revenue': [by_day.get(dt, (0, 0))[0] for dt in dates],

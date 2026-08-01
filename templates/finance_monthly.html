@@ -290,6 +290,24 @@
 const ts = {{ monthly['timeseries'] | tojson }};
 const brandColors = ['#ffea00', '#1ee8e8', '#ff1b7f', '#5dff2d', '#ff6b00'];
 
+function isolateOnLegendClick(e, legendItem, legend) {
+    const chart = legend.chart;
+    const index = legendItem.datasetIndex;
+    const isolated = chart.data.datasets.every((ds, i) =>
+        i === index ? !chart.getDatasetMeta(i).hidden : chart.getDatasetMeta(i).hidden);
+    chart.data.datasets.forEach((ds, i) => {
+        chart.getDatasetMeta(i).hidden = isolated ? false : (i !== index);
+    });
+    chart.update();
+}
+function showAllOnChartClick(e, elements, chart) {
+    const anyHidden = chart.data.datasets.some((ds, i) => chart.getDatasetMeta(i).hidden);
+    if (anyHidden) {
+        chart.data.datasets.forEach((ds, i) => { chart.getDatasetMeta(i).hidden = false; });
+        chart.update();
+    }
+}
+
 new Chart(document.getElementById('revenueChart'), {
     type: 'line',
     data: {
@@ -301,7 +319,8 @@ new Chart(document.getElementById('revenueChart'), {
     },
     options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#f0f0f0' } } },
+        onClick: showAllOnChartClick,
+        plugins: { legend: { labels: { color: '#f0f0f0' }, onClick: isolateOnLegendClick } },
         scales: {
             x: { ticks: { color: '#888', maxTicksLimit: 15 }, grid: { color: '#222' } },
             y: { ticks: { color: '#888' }, grid: { color: '#222' } }
@@ -324,7 +343,8 @@ new Chart(document.getElementById('flavourChart'), {
     },
     options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#f0f0f0' } } },
+        onClick: showAllOnChartClick,
+        plugins: { legend: { labels: { color: '#f0f0f0' }, onClick: isolateOnLegendClick } },
         scales: {
             x: { ticks: { color: '#888', maxTicksLimit: 15 }, grid: { color: '#222' } },
             y: { ticks: { color: '#888' }, grid: { color: '#222' } }
